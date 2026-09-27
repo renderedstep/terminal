@@ -193,11 +193,23 @@ impl App {
                 self.input.clear();
                 return Some(Command::Refresh);
             }
+            ":help" => {
+                self.input.clear();
+                self.scroll = 0;
+                self.log.push(Entry::Notice(present::TUI_HELP.into()));
+                return None;
+            }
             ":resume" | ":ack" => {
                 self.input.clear();
                 return self.handle_saved(&line);
             }
             _ => {}
+        }
+        if let Some(text) = present::panel_listing(&self.glance, &line) {
+            self.input.clear();
+            self.scroll = 0;
+            self.log.push(Entry::Notice(text));
+            return None;
         }
         if self.busy {
             self.status = "A turn is still running.".into();

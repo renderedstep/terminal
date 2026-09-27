@@ -133,6 +133,11 @@ In the full-screen client:
 - `:resume` finishes a turn the engine saved when it was interrupted, with
   the same request token so it is not played twice; `:ack` lets go of one
   that cannot be resumed. `:refresh` redraws from the engine.
+- When a side panel is too short for its list, its last line says how many
+  rows are hidden ("+2 more · :exits"). Ways out keeps its height before the
+  other panels shrink. `:exits`, `:here`, `:items` and `:carrying` print a
+  panel's full list into the log, and `:panels` prints them all. `:help`
+  lists the client's commands.
 - Esc, Ctrl-C or `:q` quits.
 
 Refusals, the monthly spend limit, rate limits and a rejected token are
