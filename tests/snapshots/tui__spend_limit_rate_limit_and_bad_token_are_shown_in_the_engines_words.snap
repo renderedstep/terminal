@@ -1,6 +1,5 @@
 ---
 source: tests/tui.rs
-assertion_line: 183
 expression: "render(&app, 110, 34)"
 ---
 ┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
@@ -18,14 +17,14 @@ expression: "render(&app, 110, 34)"
 │                                                                          │┌ Lying here ────────────────────┐
 │Too many turns this minute.                                               ││Filing press                    │
 │                                                                          │└────────────────────────────────┘
-│Wait a moment, then send the line again.                                  │┌ Carrying ──────────────────────┐
+│> /go The Sea Stair                                                       │┌ Carrying ──────────────────────┐
 │                                                                          ││Assize tide-slate               │
-│> /go The Sea Stair                                                       │└────────────────────────────────┘
+│That token is not recognised.                                             │└────────────────────────────────┘
 │                                                                          │┌ Condition ─────────────────────┐
-│That token is not recognised.                                             ││hurt (14 of 18)                 │
-│                                                                          ││HP 14/18 · AC 12                │
-│Check your token with `ta login`, or ask the engine's operator for a new  │└────────────────────────────────┘
-│one.                                                                      │┌ Next beat ─────────────────────┐
+│Check your token with `ta login`, or ask the engine's operator for a new  ││hurt (14 of 18)                 │
+│one.                                                                      ││HP 14/18 · AC 12                │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Next beat ─────────────────────┐
 │                                                                          ││Find out who wrote on the slate.│
 │                                                                          │└────────────────────────────────┘
 │                                                                          │                                  

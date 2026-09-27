@@ -40,3 +40,7 @@ strip = true
 # The profile cargo-dist builds with.
 [profile.dist]
 inherits = "release"
+
+# `publish = false` keeps it off crates.io; this keeps cargo-dist building it.
+[package.metadata.dist]
+dist = true

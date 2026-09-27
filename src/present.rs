@@ -84,7 +84,6 @@ pub fn error_lines(e: &EngineError) -> (String, Option<&'static str>) {
         Some(ErrorCode::Unauthorized) => {
             Some("Check your token with `ta login`, or ask the engine's operator for a new one.")
         }
-        Some(ErrorCode::RateLimited) => Some("Wait a moment, then send the line again."),
         Some(ErrorCode::LimitReached) => {
             Some("You can still read your games until the month turns.")
         }
