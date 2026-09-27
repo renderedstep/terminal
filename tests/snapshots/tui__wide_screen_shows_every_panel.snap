@@ -1,0 +1,39 @@
+---
+source: tests/tui.rs
+assertion_line: 65
+expression: "render(&app(), 110, 34)"
+---
+┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
+│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post                   │
+│                                                                          ││in Gallows Rock                 │
+│Justicar Brace waits on the bench.                                        │└────────────────────────────────┘
+│                                                                          │┌ Ways out ──────────────────────┐
+│                                                                          ││The Causeway Court              │
+│                                                                          ││The Sea Stair (unexplored)      │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Here ──────────────────────────┐
+│                                                                          ││Neb Halloran                    │
+│                                                                          ││The Tollman ⚔ (wounded)         │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Lying here ────────────────────┐
+│                                                                          ││Filing press                    │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Carrying ──────────────────────┐
+│                                                                          ││Assize tide-slate               │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Condition ─────────────────────┐
+│                                                                          ││hurt (14 of 18)                 │
+│                                                                          ││HP 14/18 · AC 12                │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Next beat ─────────────────────┐
+│                                                                          ││Find out who wrote on the slate.│
+│                                                                          │└────────────────────────────────┘
+│                                                                          │                                  
+│                                                                          │                                  
+│                                                                          │                                  
+│                                                                          │                                  
+│                                                                          │                                  
+└──────────────────────────────────────────────────────────────────────────┘                                  
+┌ /go /talk /inspect /take /drop /attack /throw ───────────────────────────┐                                  
+│>                                                                         │                                  
+└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘

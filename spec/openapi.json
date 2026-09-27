@@ -1,0 +1,1230 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "text-adventure engine protocol",
+    "version": "1"
+  },
+  "components": {
+    "securitySchemes": {
+      "player": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "unauthorized",
+                  "not_found",
+                  "limit_reached",
+                  "rate_limited",
+                  "blank_line",
+                  "conflict",
+                  "unplayable",
+                  "invalid"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "required": [
+          "protocol",
+          "version",
+          "capabilities",
+          "player",
+          "engine",
+          "world_schema"
+        ],
+        "properties": {
+          "protocol": {
+            "type": "string",
+            "const": "text-adventure-engine"
+          },
+          "version": {
+            "type": "integer",
+            "const": 1
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "player": {
+            "type": "object",
+            "required": [
+              "name",
+              "spend"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "spend": {
+                "type": "object",
+                "required": [
+                  "used_usd",
+                  "held_usd",
+                  "limit_usd",
+                  "turn_reservation_usd",
+                  "period_ends_at"
+                ],
+                "properties": {
+                  "used_usd": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "held_usd": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "limit_usd": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "turn_reservation_usd": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "period_ends_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          },
+          "engine": {
+            "type": "object",
+            "required": [
+              "name",
+              "version"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              }
+            },
+            "description": "Which engine answered. Informational: a client must not branch on it."
+          },
+          "world_schema": {
+            "type": "string",
+            "description": "The version of the world schema the engine's records are in. Opaque; compare for equality only."
+          }
+        }
+      },
+      "World": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "WorldList": {
+        "type": "object",
+        "required": [
+          "worlds"
+        ],
+        "properties": {
+          "worlds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/World"
+            }
+          }
+        }
+      },
+      "Game": {
+        "type": "object",
+        "required": [
+          "id",
+          "world",
+          "over",
+          "started_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "world": {
+            "$ref": "#/components/schemas/World"
+          },
+          "over": {
+            "type": "boolean"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GameList": {
+        "type": "object",
+        "required": [
+          "games"
+        ],
+        "properties": {
+          "games": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            }
+          }
+        }
+      },
+      "Exit": {
+        "type": "object",
+        "required": [
+          "name",
+          "written",
+          "open"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "written": {
+            "type": "boolean"
+          },
+          "open": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Person": {
+        "type": "object",
+        "required": [
+          "name",
+          "condition",
+          "foe",
+          "provoked"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "foe": {
+            "type": "boolean"
+          },
+          "provoked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Thing": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Verb": {
+        "type": "object",
+        "required": [
+          "name",
+          "available",
+          "reason",
+          "targets",
+          "aims"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "move",
+              "talk",
+              "examine",
+              "take",
+              "drop",
+              "attack",
+              "throw",
+              "use"
+            ]
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "In the order the engine offers them, which is the order of the panel list they come from."
+          },
+          "aims": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Glance": {
+        "type": "object",
+        "required": [
+          "room",
+          "exits",
+          "people",
+          "lying_here",
+          "carrying",
+          "condition",
+          "sheet",
+          "next_beat",
+          "story_time",
+          "over",
+          "ended",
+          "verbs"
+        ],
+        "properties": {
+          "room": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "name",
+                  "within"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "within": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "exits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Exit"
+            },
+            "description": "Ordered as the engine recorded them (creation order), never by query order or name."
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Person"
+            },
+            "description": "Ordered as the engine recorded them (creation order), never by query order or name."
+          },
+          "lying_here": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Thing"
+            },
+            "description": "Ordered as the engine recorded them (creation order), never by query order or name."
+          },
+          "carrying": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Thing"
+            },
+            "description": "Ordered as the engine recorded them (creation order), never by query order or name."
+          },
+          "condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sheet": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The stat block line, then the abilities line; either may be absent."
+          },
+          "next_beat": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "story_time": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "over": {
+            "type": "boolean"
+          },
+          "ended": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verbs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Verb"
+            },
+            "description": "Always all eight verbs, in the enum's order: move, talk, examine, take, drop, attack, throw, use."
+          }
+        }
+      },
+      "SavedTurn": {
+        "type": "object",
+        "required": [
+          "turn",
+          "line",
+          "action",
+          "request_token"
+        ],
+        "properties": {
+          "turn": {
+            "type": "string"
+          },
+          "line": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "resume",
+              "acknowledge",
+              "none"
+            ]
+          },
+          "request_token": {
+            "type": "string"
+          }
+        }
+      },
+      "Standing": {
+        "type": "object",
+        "required": [
+          "over",
+          "ended",
+          "busy",
+          "saved_turn"
+        ],
+        "properties": {
+          "over": {
+            "type": "boolean"
+          },
+          "ended": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "busy": {
+            "type": "boolean"
+          },
+          "saved_turn": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SavedTurn"
+              }
+            ]
+          }
+        }
+      },
+      "LogEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "typed",
+          "text",
+          "talking_to",
+          "notices"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "typed": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "talking_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Screen": {
+        "type": "object",
+        "required": [
+          "game",
+          "glance",
+          "standing",
+          "log"
+        ],
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "glance": {
+            "$ref": "#/components/schemas/Glance"
+          },
+          "standing": {
+            "$ref": "#/components/schemas/Standing"
+          },
+          "log": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogEntry"
+            }
+          }
+        }
+      },
+      "Turn": {
+        "type": "object",
+        "required": [
+          "id",
+          "line",
+          "request_token"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "line": {
+            "type": "string"
+          },
+          "request_token": {
+            "type": "string"
+          }
+        }
+      },
+      "TurnAccepted": {
+        "type": "object",
+        "required": [
+          "turn"
+        ],
+        "properties": {
+          "turn": {
+            "$ref": "#/components/schemas/Turn"
+          }
+        }
+      },
+      "StandingResponse": {
+        "type": "object",
+        "required": [
+          "standing"
+        ],
+        "properties": {
+          "standing": {
+            "$ref": "#/components/schemas/Standing"
+          }
+        }
+      },
+      "StartedEvent": {
+        "type": "object",
+        "required": [
+          "turn",
+          "line"
+        ],
+        "properties": {
+          "turn": {
+            "type": "string"
+          },
+          "line": {
+            "type": "string"
+          }
+        }
+      },
+      "ProseEvent": {
+        "type": "object",
+        "required": [
+          "turn",
+          "text"
+        ],
+        "properties": {
+          "turn": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "GlanceEvent": {
+        "type": "object",
+        "required": [
+          "turn",
+          "glance"
+        ],
+        "properties": {
+          "turn": {
+            "type": "string"
+          },
+          "glance": {
+            "$ref": "#/components/schemas/Glance"
+          }
+        }
+      },
+      "FinishedEvent": {
+        "type": "object",
+        "required": [
+          "turn",
+          "outcome",
+          "text",
+          "notices",
+          "glance",
+          "standing",
+          "refusal",
+          "resolved_by",
+          "rolls"
+        ],
+        "properties": {
+          "turn": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "moved",
+                  "talked",
+                  "took",
+                  "dropped",
+                  "read",
+                  "attacked",
+                  "threw",
+                  "used",
+                  "ended",
+                  "narrated",
+                  "refused",
+                  "safety",
+                  "failed"
+                ]
+              }
+            }
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "glance": {
+            "$ref": "#/components/schemas/Glance"
+          },
+          "standing": {
+            "$ref": "#/components/schemas/Standing"
+          },
+          "refusal": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "text"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "named_more_than_one",
+                      "unresolved",
+                      "immovable",
+                      "unreadable",
+                      "unplayable",
+                      "dead",
+                      "concluded"
+                    ]
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          },
+          "resolved_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Which reader understood the line. Opaque; for display and bug reports."
+          },
+          "rolls": {
+            "type": "array",
+            "description": "Every die the turn threw: checks first, then blows, then tolls, each in the order the engine recorded them.",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "die",
+                "result",
+                "target"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "check",
+                    "blow",
+                    "toll"
+                  ]
+                },
+                "die": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "result": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "target": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "player": []
+    }
+  ],
+  "paths": {
+    "/api/v1": {
+      "get": {
+        "operationId": "service",
+        "summary": "Protocol version, capabilities, and the player's spend",
+        "responses": {
+          "200": {
+            "description": "The service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/worlds": {
+      "get": {
+        "operationId": "listWorlds",
+        "summary": "Worlds a game can be started in",
+        "responses": {
+          "200": {
+            "description": "Worlds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/games": {
+      "get": {
+        "operationId": "listGames",
+        "summary": "The player's own games",
+        "responses": {
+          "200": {
+            "description": "Games",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startGame",
+        "summary": "Start a game in a world",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "world"
+                ],
+                "properties": {
+                  "world": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new game's screen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Screen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not this player's, or no such id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused as sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/games/{game}": {
+      "get": {
+        "operationId": "showGame",
+        "summary": "The whole screen; how a client reconnects",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The screen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Screen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not this player's, or no such id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/games/{game}/turns": {
+      "post": {
+        "operationId": "sendTurn",
+        "summary": "Send a typed line",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "line"
+                ],
+                "properties": {
+                  "line": {
+                    "type": "string"
+                  },
+                  "request_token": {
+                    "type": "string",
+                    "maxLength": 128
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted; the turn runs in the background",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TurnAccepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "This month's spend limit is reached; nothing was written",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not this player's, or no such id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicts with a turn already accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused as sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than ten turns in a minute",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/games/{game}/turns/{turn}/events": {
+      "get": {
+        "operationId": "turnEvents",
+        "summary": "The turn as Server-Sent Events",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "last_event_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An event stream: started, prose, glance and finished, with each data line one of the event schemas",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not this player's, or no such id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/games/{game}/interruptions/{turn}/acknowledge": {
+      "post": {
+        "operationId": "acknowledgeInterruption",
+        "summary": "Let go of an interrupted turn that cannot be resumed",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Where the game stands now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid player token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not this player's, or no such id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-events": {
+    "started": "StartedEvent",
+    "prose": "ProseEvent",
+    "glance": "GlanceEvent",
+    "finished": "FinishedEvent"
+  }
+}

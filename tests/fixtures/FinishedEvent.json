@@ -1,0 +1,156 @@
+{
+  "turn": "t3",
+  "outcome": {
+    "kind": "attacked"
+  },
+  "text": "You swing and the Tollman staggers.",
+  "notices": [],
+  "glance": {
+    "room": {
+      "name": "The Tide Post",
+      "within": "Gallows Rock"
+    },
+    "exits": [
+      {
+        "name": "The Causeway Court",
+        "written": true,
+        "open": true
+      }
+    ],
+    "people": [
+      {
+        "name": "Neb Halloran",
+        "condition": null,
+        "foe": false,
+        "provoked": false
+      },
+      {
+        "name": "The Tollman",
+        "condition": "wounded",
+        "foe": true,
+        "provoked": true
+      }
+    ],
+    "lying_here": [
+      {
+        "name": "Filing press"
+      }
+    ],
+    "carrying": [
+      {
+        "name": "Assize tide-slate"
+      }
+    ],
+    "condition": "hurt (14 of 18)",
+    "sheet": [
+      "HP 14/18 · AC 12",
+      "Strong, quick"
+    ],
+    "next_beat": null,
+    "story_time": "2026-03-01T20:00:00Z",
+    "over": false,
+    "ended": null,
+    "verbs": [
+      {
+        "name": "move",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": null
+      },
+      {
+        "name": "talk",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": null
+      },
+      {
+        "name": "examine",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": null
+      },
+      {
+        "name": "take",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": null
+      },
+      {
+        "name": "drop",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": null
+      },
+      {
+        "name": "attack",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": null
+      },
+      {
+        "name": "throw",
+        "available": true,
+        "reason": null,
+        "targets": [
+          "The Tollman"
+        ],
+        "aims": [
+          "The Tollman"
+        ]
+      },
+      {
+        "name": "use",
+        "available": false,
+        "reason": "Nothing here can be used.",
+        "targets": [],
+        "aims": null
+      }
+    ]
+  },
+  "standing": {
+    "over": false,
+    "ended": null,
+    "busy": false,
+    "saved_turn": null
+  },
+  "refusal": null,
+  "resolved_by": "grammar",
+  "rolls": [
+    {
+      "kind": "check",
+      "die": 20,
+      "result": 14,
+      "target": 12
+    },
+    {
+      "kind": "blow",
+      "die": null,
+      "result": 4,
+      "target": null
+    },
+    {
+      "kind": "toll",
+      "die": null,
+      "result": 2,
+      "target": null
+    }
+  ]
+}
