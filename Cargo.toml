@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "crates/engine-core"]
+members = ["."]
 resolver = "2"
 
 [package]
