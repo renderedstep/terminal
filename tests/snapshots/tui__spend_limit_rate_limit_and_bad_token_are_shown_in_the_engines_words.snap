@@ -1,0 +1,38 @@
+---
+source: tests/tui.rs
+expression: "render(&app, 110, 34)"
+---
+┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
+│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post                   │
+│                                                                          ││in Gallows Rock                 │
+│Justicar Brace waits on the bench.                                        │└────────────────────────────────┘
+│                                                                          │┌ Ways out ──────────────────────┐
+│> /go The Sea Stair                                                       ││The Causeway Court              │
+│                                                                          ││The Sea Stair (unexplored)      │
+│You have reached this month's spend limit of $5.00.                       │└────────────────────────────────┘
+│                                                                          │┌ Here ──────────────────────────┐
+│You can still read your games until the month turns.                      ││Neb Halloran                    │
+│                                                                          ││The Tollman ⚔ (wounded)         │
+│> /go The Sea Stair                                                       │└────────────────────────────────┘
+│                                                                          │┌ Lying here ────────────────────┐
+│Too many turns this minute.                                               ││Filing press                    │
+│                                                                          │└────────────────────────────────┘
+│> /go The Sea Stair                                                       │┌ Carrying ──────────────────────┐
+│                                                                          ││Assize tide-slate               │
+│That token is not recognised.                                             │└────────────────────────────────┘
+│                                                                          │┌ Condition ─────────────────────┐
+│Check your token with `ta login`, or ask the engine's operator for a new  ││hurt (14 of 18)                 │
+│one.                                                                      ││HP 14/18 · AC 12                │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Next beat ─────────────────────┐
+│                                                                          ││Find out who wrote on the slate.│
+│                                                                          │└────────────────────────────────┘
+│                                                                          │                                  
+│                                                                          │                                  
+│                                                                          │                                  
+│                                                                          │                                  
+│                                                                          │                                  
+└──────────────────────────────────────────────────────────────────────────┘                                  
+┌ /go /talk /inspect /take /drop /attack /throw ───────────────────────────┐                                  
+│>                                                                         │                                  
+└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘

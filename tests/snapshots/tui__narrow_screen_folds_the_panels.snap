@@ -1,0 +1,27 @@
+---
+source: tests/tui.rs
+assertion_line: 70
+expression: "render(&app(), 70, 22)"
+---
+┌ The Tide Post ─────────────────────────────────────────────────────┐
+│The chalk is still under your thumb and it is still not your        │
+│handwriting.                                                        │
+│                                                                    │
+│Justicar Brace waits on the bench.                                  │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+Ways out: The Causeway Court, The Sea Stair  Here: Neb Halloran, The T
+Lying here: Filing press  Carrying: Assize tide-slate                 
+hurt (14 of 18)  Next: Find out who wrote on the slate.               
+┌ /go /talk /inspect /take /drop /attack /throw ─────────────────────┐
+│>                                                                   │
+└───────────────────────────────────────────────── Wren · fake 0.0.0 ┘
