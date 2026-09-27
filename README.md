@@ -1,7 +1,7 @@
 # text-adventure-terminal
 
 A terminal client for the text-adventure game engine. It speaks the engine's
-protocol v1 (HTTP with JSON, and Server-Sent Events for each turn), so it plays
+protocol v1, revision 1.1 (HTTP with JSON, and Server-Sent Events for each turn), so it plays
 against any engine that serves that protocol.
 
 ```
@@ -46,7 +46,7 @@ gh api repos/calebl/text-adventure-terminal/contents/install.ps1 `
 
 Both scripts download the archive for your platform with `gh release
 download`, check it against the release's `SHA256SUMS`, and refuse to install
-on a mismatch. Set `TA_VERSION=v0.1.0` to install a particular release, or
+on a mismatch. Set `TA_VERSION=v0.2.0` to install a particular release, or
 `TA_INSTALL_DIR` to install somewhere else.
 
 Builds are published for macOS (Apple silicon and Intel), Linux (x86_64 and
@@ -118,8 +118,13 @@ ta line [game]       # plain line mode
 In the full-screen client:
 
 - Type a line and press Enter. Lines starting with `/` use the engine's
-  verbs; Tab completes the verb, then its target from the glance
-  (`/ta` → `/take `, `/take fi` → `/take Filing press`). Tab again cycles.
+  verbs, with the words the engine names for them; Tab completes the verb,
+  then its target from the glance (`/ta` → `/take `, `/take fi` →
+  `/take Filing press`). Tab again cycles.
+- `use` targets are whole attempts, each played by a line the engine gives.
+  `/use ` and Tab completes a target to its line (`/use off` →
+  `/offer tide-slate to Ammon Brace`), and `/use <target>` sent as it is goes
+  as that target's line too.
 - PageUp and PageDown scroll the log.
 - `:resume` finishes a turn the engine saved when it was interrupted, with
   the same request token so it is not played twice; `:ack` lets go of one
@@ -129,7 +134,8 @@ In the full-screen client:
 Refusals, the monthly spend limit, rate limits and a rejected token are
 shown in the engine's own words. If the connection drops during a turn, the
 client reconnects from the last event it received, so nothing is shown
-twice.
+twice. Opening a game while a turn is still playing follows that turn's
+events to the end, in both the full-screen client and line mode.
 
 ### Line mode, for scripts and agents
 
@@ -157,8 +163,10 @@ cargo test
   engine for tests. An in-process engine would implement the same trait.
 - `src/protocol.rs` has the protocol's types. `spec/openapi.json` is a copy of
   the engine's published contract, and `tests/contract.rs` checks the types
-  and the example payloads in `tests/fixtures/` against it. When the protocol
-  grows, update that copy and the tests say what changed.
+  against it. The tests use the contract's own examples as payloads
+  (`tests/common/`), the same ones the engine's tests hold to its real
+  responses. When the protocol grows, update that copy and the tests say
+  what changed.
 - `tests/tui.rs` renders screens into a test terminal and compares them with
   the snapshots in `tests/snapshots/` (review changes with `cargo insta
   review`, or `INSTA_UPDATE=always cargo test`).
@@ -170,7 +178,7 @@ cargo test
 Bump `version` in `Cargo.toml`, merge, then push a matching tag:
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.2.0 && git push origin v0.2.0
 ```
 
 `.github/workflows/release.yml` builds every target and attaches the archives

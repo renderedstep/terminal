@@ -84,6 +84,22 @@ impl App {
         app
     }
 
+    /// What to do on opening the game: follow the turn the engine is still
+    /// playing, if any, so its prose streams in as it would have.
+    pub fn start(&mut self) -> Option<Command> {
+        self.follow_running()
+    }
+
+    fn follow_running(&mut self) -> Option<Command> {
+        if self.busy || !self.standing.busy {
+            return None;
+        }
+        let turn = self.standing.running_turn.clone()?;
+        self.busy = true;
+        self.status = "A turn is still playing; following it…".into();
+        Some(Command::Follow { turn })
+    }
+
     fn load_log(&mut self, screen: &Screen) {
         self.log.clear();
         for entry in &screen.log {
@@ -187,6 +203,7 @@ impl App {
             self.status = "A turn is still running.".into();
             return None;
         }
+        let line = present::line_to_send(&self.glance, &line);
         self.input.clear();
         self.scroll = 0;
         self.busy = true;
@@ -254,6 +271,7 @@ impl App {
                 self.standing = screen.standing.clone();
                 self.load_log(&screen);
                 self.status = "Redrawn from the engine.".into();
+                return self.follow_running();
             }
             EngineMsg::Standing(standing) => {
                 self.standing = standing;

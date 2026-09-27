@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use text_adventure_terminal::engine::fake::{sample_screen, FakeEngine};
-use text_adventure_terminal::engine::{EngineError, Reconnect};
+use text_adventure_terminal::engine::{Engine, EngineError, Reconnect};
 use text_adventure_terminal::line::{run, Options};
 use text_adventure_terminal::protocol::ErrorCode;
 
@@ -81,4 +81,36 @@ fn json_mode_writes_one_finished_event_per_line() {
     let v: serde_json::Value = serde_json::from_str(out.trim()).unwrap();
     assert_eq!(v["outcome"]["kind"], "narrated");
     assert_eq!(engine.connects(), vec![None, Some("1".into())]);
+}
+
+#[test]
+fn a_turn_still_playing_is_followed_before_new_lines() {
+    let engine = FakeEngine::new();
+    let running = engine.leave_running("/take Filing press");
+    let screen = engine.screen("game-1").unwrap();
+    let mut out = Vec::new();
+    let errors = run(
+        &engine,
+        &screen,
+        "/use Offer Assize tide-slate to Neb Halloran; they may refuse\n".as_bytes(),
+        &mut out,
+        Options { json: false },
+        &Reconnect::default(),
+    )
+    .unwrap();
+    assert_eq!(errors, 0);
+    let out = String::from_utf8(out).unwrap();
+    assert!(
+        out.contains("You try to /take Filing press."),
+        "the running turn {running} was followed: {out}"
+    );
+    let sent: Vec<String> = engine.sent_lines().into_iter().map(|(l, _)| l).collect();
+    assert_eq!(
+        sent,
+        [
+            "/take Filing press",
+            "/offer Assize tide-slate to Neb Halloran"
+        ],
+        "the running turn is not sent again, and a use target goes as its line"
+    );
 }

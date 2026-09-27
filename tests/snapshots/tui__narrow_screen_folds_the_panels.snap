@@ -1,6 +1,6 @@
 ---
 source: tests/tui.rs
-assertion_line: 70
+assertion_line: 74
 expression: "render(&app(), 70, 22)"
 ---
 ┌ The Tide Post ─────────────────────────────────────────────────────┐
@@ -22,6 +22,6 @@ expression: "render(&app(), 70, 22)"
 Ways out: The Causeway Court, The Sea Stair  Here: Neb Halloran, The T
 Lying here: Filing press  Carrying: Assize tide-slate                 
 hurt (14 of 18)  Next: Find out who wrote on the slate.               
-┌ /go /talk /inspect /take /drop /attack /throw ─────────────────────┐
+┌ /go /talk /inspect /take /drop /attack /throw /use ────────────────┐
 │>                                                                   │
 └───────────────────────────────────────────────── Wren · fake 0.0.0 ┘

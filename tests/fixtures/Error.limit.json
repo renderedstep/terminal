@@ -1,6 +1,0 @@
-{
-  "error": {
-    "code": "limit_reached",
-    "message": "You have reached this month's spend limit of $5.00."
-  }
-}

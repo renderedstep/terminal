@@ -13,7 +13,7 @@ use text_adventure_terminal::engine::fake::{
 };
 use text_adventure_terminal::engine::{Engine, EngineError};
 use text_adventure_terminal::protocol::*;
-use text_adventure_terminal::tui::app::{App, Command, EngineMsg};
+use text_adventure_terminal::tui::app::{App, Command, EngineMsg, Entry};
 use text_adventure_terminal::tui::{execute, view};
 
 fn render(app: &App, width: u16, height: u16) -> String {
@@ -252,4 +252,34 @@ fn a_dropped_stream_is_resumed_without_repeating_prose() {
         .filter(|e| matches!(e, text_adventure_terminal::tui::app::Entry::Prose(t) if t.contains("wave")))
         .collect();
     assert_eq!(prose.len(), 1);
+}
+
+#[test]
+fn reopening_a_busy_game_follows_the_running_turn() {
+    let engine = Arc::new(FakeEngine::new());
+    let running = engine.leave_running("/take Filing press");
+    let mut app = App::new(engine.screen("game-1").unwrap(), "Wren".into());
+    let first = app.start().expect("a running turn is followed");
+    assert_eq!(first, Command::Follow { turn: running });
+    assert!(app.busy);
+    drive(&mut app, engine.clone(), first);
+    assert!(!app.busy);
+    assert!(app.log.contains(&Entry::Prose(
+        "You try to /take Filing press. The fog does not care either way.".into()
+    )));
+    assert_eq!(engine.sent_lines().len(), 1, "nothing is sent again");
+}
+
+#[test]
+fn a_use_target_is_sent_as_its_line() {
+    let mut app = app();
+    type_line(&mut app, "/use off");
+    app.on_key(key(KeyCode::Tab));
+    assert_eq!(app.input, "/offer Assize tide-slate to Neb Halloran");
+    app.input = "/use Offer Assize tide-slate to Neb Halloran; they may refuse".into();
+    let cmd = app.on_key(key(KeyCode::Enter)).unwrap();
+    assert!(matches!(
+        cmd,
+        Command::Send { line, .. } if line == "/offer Assize tide-slate to Neb Halloran"
+    ));
 }

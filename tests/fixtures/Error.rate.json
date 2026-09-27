@@ -1,6 +1,0 @@
-{
-  "error": {
-    "code": "rate_limited",
-    "message": "Too many turns this minute. Wait a moment."
-  }
-}

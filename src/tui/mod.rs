@@ -47,6 +47,9 @@ pub fn execute(engine: Arc<dyn Engine>, game: String, command: Command, tx: Send
 
 pub fn run(engine: Arc<dyn Engine>, game: String, mut app: App) -> anyhow::Result<()> {
     let (tx, rx): (Sender<EngineMsg>, Receiver<EngineMsg>) = mpsc::channel();
+    if let Some(cmd) = app.start() {
+        execute(engine.clone(), game.clone(), cmd, tx.clone());
+    }
     let mut terminal = ratatui::init();
     let result = (|| -> anyhow::Result<()> {
         while !app.quit {

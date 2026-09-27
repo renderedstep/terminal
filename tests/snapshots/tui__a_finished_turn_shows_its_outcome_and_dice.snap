@@ -1,6 +1,6 @@
 ---
 source: tests/tui.rs
-assertion_line: 135
+assertion_line: 157
 expression: "render(&app, 110, 24)"
 ---
 ┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
@@ -24,6 +24,6 @@ expression: "render(&app, 110, 24)"
 │                                                                          │┌ Condition ─────────────────────┐
 │                                                                          ││hurt (14 of 18)                 │
 └──────────────────────────────────────────────────────────────────────────┘└────────────────────────────────┘
-┌ /go /talk /inspect /take /drop /attack /throw ───────────────────────────┐┌ Next beat ─────────────────────┐
+┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐┌ Next beat ─────────────────────┐
 │>                                                                         ││Find out who wrote on the slate.│
 └─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘└────────────────────────────────┘
