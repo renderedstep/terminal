@@ -1,0 +1,24 @@
+---
+source: tests/tui.rs
+expression: screen
+---
+┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
+│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post                   │
+│                                                                          ││in Gallows Rock                 │
+│Justicar Brace waits on the bench.                                        │└────────────────────────────────┘
+│                                                                          │┌ Ways out ──────────────────────┐
+│                                                                          ││The Causeway Court              │
+│                                                                          ││The Sea Stair                   │
+│                                                                          ││The Bell Loft                   │
+│                                                                          ││The Toll Gate                   │
+│                                                                          ││The Drowned Cellar              │
+│                                                                          ││The Clerks' Passage             │
+│                                                                          ││The Signal Walk                 │
+│                                                                          ││The Watch Room                  │
+│                                                                          ││The Lamp Room                   │
+│                                                                          ││The Counting House              │
+│                                                                          ││The Weir                        │
+└──────────────────────────────────────────────────────────────────────────┘│The Harbour Steps               │
+┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐└────────────────────────────────┘
+│>                                                                         │+5 hidden panels · :panels        
+└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘

@@ -1,0 +1,18 @@
+---
+source: tests/tui.rs
+expression: screen
+---
+┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
+│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post +1 more           │
+│                                                                          │└────────────────────────────────┘
+│Justicar Brace waits on the bench.                                        │┌ Ways out ──────────────────────┐
+│                                                                          ││The Causeway Court              │
+│                                                                          ││The Sea Stair                   │
+│                                                                          ││The Bell Loft                   │
+│                                                                          ││The Toll Gate                   │
+│                                                                          ││The Drowned Cellar              │
+│                                                                          ││The Clerks' Passage             │
+└──────────────────────────────────────────────────────────────────────────┘│The Signal Walk                 │
+┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐│+5 more · :exits                │
+│>                                                                         │└────────────────────────────────┘
+└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘+5 hidden panels · :panels

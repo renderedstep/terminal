@@ -283,3 +283,136 @@ fn a_use_target_is_sent_as_its_line() {
         Command::Send { line, .. } if line == "/offer Assize tide-slate to Neb Halloran"
     ));
 }
+
+/// The sample screen in a room with more ways out than a short terminal fits.
+fn crowded_app() -> App {
+    let mut screen = sample_screen();
+    screen.glance.exits = [
+        "The Causeway Court",
+        "The Sea Stair",
+        "The Bell Loft",
+        "The Toll Gate",
+        "The Drowned Cellar",
+        "The Clerks' Passage",
+        "The Signal Walk",
+        "The Watch Room",
+        "The Lamp Room",
+        "The Counting House",
+        "The Weir",
+        "The Harbour Steps",
+    ]
+    .iter()
+    .map(|name| Exit {
+        name: name.to_string(),
+        written: true,
+        open: true,
+    })
+    .collect();
+    App::new(screen, "Wren · fake 0.0.0".into())
+}
+
+#[test]
+fn a_short_terminal_keeps_ways_out_and_marks_hidden_rows() {
+    let screen = render(&crowded_app(), 110, 20);
+    assert!(
+        screen.contains("The Harbour Steps"),
+        "every exit fits at 20 rows"
+    );
+    assert!(screen.contains("+5 hidden panels · :panels"));
+    insta::assert_snapshot!(screen);
+}
+
+#[test]
+fn a_very_short_terminal_marks_hidden_exits() {
+    let screen = render(&crowded_app(), 110, 14);
+    assert!(screen.contains("The Tide Post +1 more"));
+    assert!(screen.contains("+5 more · :exits"));
+    insta::assert_snapshot!(screen);
+}
+
+#[test]
+fn ways_out_gets_height_first() {
+    let titles = [
+        "Room",
+        "Ways out",
+        "Here",
+        "Lying here",
+        "Carrying",
+        "Condition",
+        "Next beat",
+    ];
+    let needed = [4, 10, 4, 3, 3, 4, 3];
+    // Ways out takes all it needs, then the others get a row each in turn.
+    assert_eq!(
+        view::panel_heights(&titles, &needed, 24),
+        vec![4, 10, 4, 3, 3, 0, 0]
+    );
+    // Too short even for every exit: Ways out still comes first.
+    assert_eq!(
+        view::panel_heights(&titles, &needed, 8),
+        vec![3, 5, 0, 0, 0, 0, 0]
+    );
+    assert_eq!(
+        view::panel_heights(&titles, &needed, 31),
+        vec![4, 10, 4, 3, 3, 4, 3]
+    );
+}
+
+#[test]
+fn listing_commands_print_full_lists_into_the_log() {
+    let mut app = crowded_app();
+    for (cmd, expect) in [
+        (
+            ":exits",
+            "Ways out:\n  The Causeway Court\n  The Sea Stair\n  The Bell Loft",
+        ),
+        (":here", "Here:\n  Neb Halloran\n  The Tollman ⚔ (wounded)"),
+        (":items", "Lying here:\n  Filing press"),
+        (":carrying", "Carrying:\n  Assize tide-slate"),
+    ] {
+        type_line(&mut app, cmd);
+        assert_eq!(app.on_key(key(KeyCode::Enter)), None, "{cmd} sends nothing");
+        assert!(app.input.is_empty());
+        match app.log.last() {
+            Some(Entry::Notice(text)) => assert!(text.starts_with(expect), "{cmd}: {text}"),
+            other => panic!("{cmd}: {other:?}"),
+        }
+    }
+    let Some(Entry::Notice(exits)) = app.log.iter().rev().nth(3) else {
+        panic!("no :exits listing");
+    };
+    assert!(exits.ends_with("The Harbour Steps"));
+
+    type_line(&mut app, ":panels");
+    app.on_key(key(KeyCode::Enter));
+    let Some(Entry::Notice(all)) = app.log.last() else {
+        panic!("no :panels listing");
+    };
+    for part in [
+        "Room: The Tide Post (in Gallows Rock)",
+        "The Harbour Steps",
+        "Carrying:",
+        "HP 14/18 · AC 12",
+        "Next beat: Find out who wrote on the slate.",
+    ] {
+        assert!(all.contains(part), "{part} missing from {all}");
+    }
+
+    type_line(&mut app, ":help");
+    app.on_key(key(KeyCode::Enter));
+    let Some(Entry::Notice(help)) = app.log.last() else {
+        panic!("no help");
+    };
+    for cmd in [":exits", ":here", ":items", ":carrying", ":panels"] {
+        assert!(help.contains(cmd));
+    }
+}
+
+#[test]
+fn listing_commands_work_while_a_turn_runs() {
+    let mut app = crowded_app();
+    app.busy = true;
+    type_line(&mut app, ":exits");
+    app.on_key(key(KeyCode::Enter));
+    assert!(matches!(app.log.last(), Some(Entry::Notice(t)) if t.starts_with("Ways out:")));
+}

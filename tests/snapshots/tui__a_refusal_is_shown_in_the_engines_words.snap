@@ -1,25 +1,24 @@
 ---
 source: tests/tui.rs
-assertion_line: 181
 expression: "render(&app, 110, 20)"
 ---
 ┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
-│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post                   │
+│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post +1 more           │
 │                                                                          │└────────────────────────────────┘
 │Justicar Brace waits on the bench.                                        │┌ Ways out ──────────────────────┐
 │                                                                          ││The Causeway Court              │
-│> /take Filing press                                                      │└────────────────────────────────┘
-│                                                                          │┌ Here ──────────────────────────┐
-│The filing press is bolted to the floor.                                  ││Neb Halloran                    │
-│» refused                                                                 │└────────────────────────────────┘
+│> /take Filing press                                                      ││The Sea Stair (unexplored)      │
+│                                                                          │└────────────────────────────────┘
+│The filing press is bolted to the floor.                                  │┌ Here ──────────────────────────┐
+│» refused                                                                 ││Neb Halloran +1 more            │
+│                                                                          │└────────────────────────────────┘
 │                                                                          │┌ Lying here ────────────────────┐
+│                                                                          ││Filing press                    │
 │                                                                          │└────────────────────────────────┘
 │                                                                          │┌ Carrying ──────────────────────┐
 │                                                                          ││Assize tide-slate               │
 │                                                                          │└────────────────────────────────┘
-│                                                                          │┌ Condition ─────────────────────┐
-│                                                                          ││hurt (14 of 18)                 │
-└──────────────────────────────────────────────────────────────────────────┘└────────────────────────────────┘
-┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐┌ Next beat ─────────────────────┐
-│>                                                                         ││Find out who wrote on the slate.│
-└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘└────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────────┘┌ Condition ─────────────────────┐
+┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐│hurt (14 of 18) +1 more         │
+│>                                                                         │└────────────────────────────────┘
+└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘+ Next beat · :panels

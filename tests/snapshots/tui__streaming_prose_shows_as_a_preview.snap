@@ -1,6 +1,5 @@
 ---
 source: tests/tui.rs
-assertion_line: 92
 expression: "render(&app, 110, 24)"
 ---
 ┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
@@ -22,7 +21,7 @@ expression: "render(&app, 110, 24)"
 │                                                                          ││Assize tide-slate               │
 │                                                                          │└────────────────────────────────┘
 │                                                                          │┌ Condition ─────────────────────┐
-│                                                                          ││hurt (14 of 18)                 │
+│                                                                          ││hurt (14 of 18) +1 more         │
 └──────────────────────────────────────────────────────────────────────────┘└────────────────────────────────┘
 ┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐┌ Next beat ─────────────────────┐
 │>                                                                         ││Find out who wrote on the slate.│

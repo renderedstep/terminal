@@ -196,6 +196,121 @@ pub fn verb_hint(glance: &Glance) -> String {
         .join(" ")
 }
 
+/// The glance's lists as the side panels and the listing commands show them.
+pub struct PanelLists {
+    pub exits: Vec<String>,
+    pub here: Vec<String>,
+    pub lying_here: Vec<String>,
+    pub carrying: Vec<String>,
+    pub condition: Vec<String>,
+}
+
+pub fn panel_lists(g: &Glance) -> PanelLists {
+    let names = |v: &[crate::protocol::Thing]| v.iter().map(|t| t.name.clone()).collect();
+    let mut condition: Vec<String> = g.condition.iter().cloned().collect();
+    condition.extend(g.sheet.iter().cloned());
+    PanelLists {
+        exits: g
+            .exits
+            .iter()
+            .map(|e| {
+                let mut s = e.name.clone();
+                if !e.open {
+                    s.push_str(" (shut)");
+                }
+                if !e.written {
+                    s.push_str(" (unexplored)");
+                }
+                s
+            })
+            .collect(),
+        here: g
+            .people
+            .iter()
+            .map(|p| {
+                let mut s = p.name.clone();
+                if p.foe {
+                    s.push_str(" ⚔");
+                }
+                if let Some(c) = &p.condition {
+                    s.push_str(&format!(" ({c})"));
+                }
+                s
+            })
+            .collect(),
+        lying_here: names(&g.lying_here),
+        carrying: names(&g.carrying),
+        condition,
+    }
+}
+
+/// One panel's full list as a block of text for the log.
+fn listing(title: &str, items: &[String]) -> String {
+    if items.is_empty() {
+        format!("{title}: nothing")
+    } else {
+        let mut s = format!("{title}:");
+        for item in items {
+            s.push_str("\n  ");
+            s.push_str(item);
+        }
+        s
+    }
+}
+
+/// The text a listing command prints into the log, or `None` when `cmd` is
+/// not one.
+pub fn panel_listing(g: &Glance, cmd: &str) -> Option<String> {
+    let l = panel_lists(g);
+    Some(match cmd {
+        ":exits" => listing("Ways out", &l.exits),
+        ":here" => listing("Here", &l.here),
+        ":items" => listing("Lying here", &l.lying_here),
+        ":carrying" => listing("Carrying", &l.carrying),
+        ":panels" => {
+            let room = match &g.room {
+                Some(r) => match &r.within {
+                    Some(w) => format!("Room: {} (in {w})", r.name),
+                    None => format!("Room: {}", r.name),
+                },
+                None => "Room: nowhere".into(),
+            };
+            let beat = match (&g.ended, &g.next_beat) {
+                (Some(ended), _) if g.over => format!("Over: {ended}"),
+                (_, Some(b)) => b.clone(),
+                _ => "no story beat ahead".into(),
+            };
+            [
+                room,
+                listing("Ways out", &l.exits),
+                listing("Here", &l.here),
+                listing("Lying here", &l.lying_here),
+                listing("Carrying", &l.carrying),
+                listing("Condition", &l.condition),
+                format!("Next beat: {beat}"),
+            ]
+            .join("\n")
+        }
+        _ => return None,
+    })
+}
+
+/// The full-screen client's own commands, for `:help`.
+pub const TUI_HELP: &str = "\
+Client commands:
+  :exits      list every way out
+  :here       list everyone here
+  :items      list everything lying here
+  :carrying   list everything carried
+  :panels     list every panel in full
+  :resume     finish an interrupted turn
+  :ack        let go of a turn that cannot finish
+  :refresh    redraw from the engine
+  :help       show this list
+  :q          quit
+PageUp and PageDown scroll the log; a side panel too short for its list
+ends in a \"+N more\" line naming the command that shows it all.";
+
 #[cfg(test)]
 mod tests {
     use super::*;
