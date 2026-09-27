@@ -45,4 +45,4 @@ tables, and refuses a file whose format version it does not know.
 
 ## Licence
 
-MIT, as the Ruby engine is.
+MIT OR Apache-2.0, at your option, as the rest of this repository is.
