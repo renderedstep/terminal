@@ -154,9 +154,14 @@ printf '/inspect Assize tide-slate\n/go The Tide Post\n' | ta line --json
 
 ```sh
 cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
 ```
+
+The repository is a Cargo workspace: the client at the root, and
+`crates/engine-core`, the engine's pure rules (dice and geometry) in Rust,
+checked against golden vectors from the Ruby engine. The client does not use
+it yet; see its own README.
 
 - `src/engine/` holds the `Engine` trait, the one seam between the interface
   and a game. `http.rs` implements protocol v1; `fake.rs` is an in-memory

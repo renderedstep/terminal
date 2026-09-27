@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "crates/engine-core"]
+resolver = "2"
+
 [package]
 name = "text-adventure-terminal"
 version = "0.2.0"
