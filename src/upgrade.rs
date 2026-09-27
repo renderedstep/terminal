@@ -7,7 +7,7 @@ use std::process::Command;
 use anyhow::{bail, Context};
 use sha2::{Digest, Sha256};
 
-pub const DEFAULT_REPO: &str = "calebl/text-adventure-terminal";
+pub const DEFAULT_REPO: &str = "renderedstep/terminal";
 pub const ENV_REPO: &str = "TA_RELEASE_REPO";
 pub const TARGET: &str = env!("TA_TARGET");
 pub const CURRENT: &str = env!("CARGO_PKG_VERSION");

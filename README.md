@@ -32,7 +32,7 @@ You need `gh` signed in (`gh auth login`) with access to this repository.
 macOS and Linux (installs to `~/.local/bin`):
 
 ```sh
-gh api repos/calebl/text-adventure-terminal/contents/install.sh \
+gh api repos/renderedstep/terminal/contents/install.sh \
   -H 'Accept: application/vnd.github.raw' | sh
 ```
 
@@ -40,7 +40,7 @@ Windows (PowerShell; installs to `%LOCALAPPDATA%\Programs\ta` and adds it to
 your user `PATH`):
 
 ```powershell
-gh api repos/calebl/text-adventure-terminal/contents/install.ps1 `
+gh api repos/renderedstep/terminal/contents/install.ps1 `
   -H 'Accept: application/vnd.github.raw' | Out-String | Invoke-Expression
 ```
 
@@ -64,6 +64,10 @@ ta upgrade --check  # only say whether a newer release exists
 `ta upgrade` uses your `gh` login too: it finds the latest release, downloads
 the archive for the platform it was built for, verifies the checksum, and
 replaces itself. Running the install script again does the same.
+
+The repository moved from `calebl/text-adventure-terminal` to
+`renderedstep/terminal`. GitHub redirects the old name, so a `ta` installed
+before the move still finds and upgrades to new releases.
 
 ## Configuration
 
@@ -192,3 +196,8 @@ and `SHA256SUMS` to a GitHub Release. The tag must match the crate version.
 `dist-workspace.toml` holds a [cargo-dist](https://opensource.axo.dev/cargo-dist/)
 configuration for when the repository goes public. Its public installers are
 switched off and it generates no CI today.
+
+## Licence
+
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT), at your option.

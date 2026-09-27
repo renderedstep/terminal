@@ -1,16 +1,16 @@
 # Install or upgrade `ta` on Windows from this repository's GitHub Releases,
 # using your own `gh` login (the releases are not public).
 #
-#   gh api repos/calebl/text-adventure-terminal/contents/install.ps1 `
+#   gh api repos/renderedstep/terminal/contents/install.ps1 `
 #     -H 'Accept: application/vnd.github.raw' | Out-String | Invoke-Expression
 #
 # Environment:
 #   TA_VERSION      a release tag such as v0.1.0 (default: the latest release)
 #   TA_INSTALL_DIR  where to put ta.exe (default: %LOCALAPPDATA%\Programs\ta)
-#   TA_RELEASE_REPO owner/name to install from (default: calebl/text-adventure-terminal)
+#   TA_RELEASE_REPO owner/name to install from (default: renderedstep/terminal)
 $ErrorActionPreference = 'Stop'
 
-$repo = if ($env:TA_RELEASE_REPO) { $env:TA_RELEASE_REPO } else { 'calebl/text-adventure-terminal' }
+$repo = if ($env:TA_RELEASE_REPO) { $env:TA_RELEASE_REPO } else { 'renderedstep/terminal' }
 $installDir = if ($env:TA_INSTALL_DIR) { $env:TA_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA 'Programs\ta' }
 $version = $env:TA_VERSION
 

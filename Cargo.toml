@@ -8,7 +8,8 @@ version = "0.2.0"
 edition = "2021"
 rust-version = "1.88"
 description = "Terminal client for the text-adventure engine protocol v1"
-repository = "https://github.com/calebl/text-adventure-terminal"
+repository = "https://github.com/renderedstep/terminal"
+license = "MIT OR Apache-2.0"
 publish = false
 
 [[bin]]

@@ -2,16 +2,16 @@
 # Install or upgrade `ta` from this repository's GitHub Releases, using your
 # own `gh` login (the releases are not public).
 #
-#   gh api repos/calebl/text-adventure-terminal/contents/install.sh \
+#   gh api repos/renderedstep/terminal/contents/install.sh \
 #     -H 'Accept: application/vnd.github.raw' | sh
 #
 # Environment:
 #   TA_VERSION      a release tag such as v0.1.0 (default: the latest release)
 #   TA_INSTALL_DIR  where to put the binary (default: ~/.local/bin)
-#   TA_RELEASE_REPO owner/name to install from (default: calebl/text-adventure-terminal)
+#   TA_RELEASE_REPO owner/name to install from (default: renderedstep/terminal)
 set -eu
 
-repo="${TA_RELEASE_REPO:-calebl/text-adventure-terminal}"
+repo="${TA_RELEASE_REPO:-renderedstep/terminal}"
 install_dir="${TA_INSTALL_DIR:-$HOME/.local/bin}"
 version="${TA_VERSION:-}"
 
