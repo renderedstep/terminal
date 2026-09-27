@@ -1,24 +1,9 @@
 //! Words the client shows, shared by the TUI and line mode.
 
 use crate::engine::EngineError;
-use crate::protocol::{ErrorCode, FinishedEvent, Glance, OutcomeKind, Roll, RollKind, VerbName};
-
-/// The word a player types for a verb. Protocol v1 names verbs but not the
-/// words the engine reads for them, so this table follows the engine's typed
-/// grammar: `/go` moves and `/inspect` examines.
-pub fn typed_word(verb: VerbName) -> Option<&'static str> {
-    Some(match verb {
-        VerbName::Move => "go",
-        VerbName::Talk => "talk",
-        VerbName::Examine => "inspect",
-        VerbName::Take => "take",
-        VerbName::Drop => "drop",
-        VerbName::Attack => "attack",
-        VerbName::Throw => "throw",
-        VerbName::Use => "use",
-        VerbName::Unknown => return None,
-    })
-}
+use crate::protocol::{
+    ErrorCode, FinishedEvent, Glance, OutcomeKind, Roll, RollKind, Verb, VerbName,
+};
 
 pub fn outcome_word(kind: OutcomeKind) -> &'static str {
     match kind {
@@ -94,40 +79,77 @@ pub fn error_lines(e: &EngineError) -> (String, Option<&'static str>) {
 
 /// Completion candidates for the input line, from the glance's verbs and
 /// their targets. The result is whole replacement lines.
+///
+/// Each verb completes as `/word target`, with the word the engine names for
+/// it. `use` has no word: its targets are whole attempts, each played by its
+/// own line, so `/use ` completes a target to that line, and typing the start
+/// of a line completes it too.
 pub fn completions(glance: &Glance, input: &str) -> Vec<String> {
     let Some(rest) = input.strip_prefix('/') else {
         return vec![];
     };
-    let words: Vec<(VerbName, &str)> = glance
+    let starts =
+        |choice: &str, typed: &str| choice.to_lowercase().starts_with(&typed.to_lowercase());
+    let use_lines: Vec<(&String, &String)> = glance
+        .verb(VerbName::Use)
+        .filter(|v| v.available)
+        .map(|v| {
+            let lines = v.lines.as_deref().unwrap_or_default();
+            v.targets
+                .iter()
+                .zip(lines)
+                .filter_map(|(t, l)| l.as_ref().map(|l| (t, l)))
+                .collect()
+        })
+        .unwrap_or_default();
+    let words: Vec<(&Verb, &str)> = glance
         .verbs
         .iter()
         .filter(|v| v.available)
-        .filter_map(|v| typed_word(v.name).map(|w| (v.name, w)))
+        .filter_map(|v| v.word.as_deref().map(|w| (v, w)))
         .collect();
     let Some((word, arg)) = rest.split_once(' ') else {
-        let lower = rest.to_lowercase();
-        return words
+        let mut found: Vec<String> = words
             .iter()
-            .filter(|(_, w)| w.starts_with(&lower))
+            .filter(|(_, w)| starts(w, rest))
             .map(|(_, w)| format!("/{w} "))
             .collect();
+        if !use_lines.is_empty() && starts(USE, rest) {
+            found.push(format!("/{USE} "));
+        }
+        found.extend(
+            use_lines
+                .iter()
+                .filter(|(_, l)| starts(l, input))
+                .map(|(_, l)| l.to_string()),
+        );
+        return found;
     };
-    let Some((verb_name, _)) = words.iter().find(|(_, w)| w.eq_ignore_ascii_case(word)) else {
-        return vec![];
-    };
-    let Some(verb) = glance.verb(*verb_name) else {
-        return vec![];
+    let typed = arg.trim_start();
+    if word.eq_ignore_ascii_case(USE) {
+        return use_lines
+            .iter()
+            .filter(|(t, _)| starts(t, typed))
+            .map(|(_, l)| l.to_string())
+            .collect();
+    }
+    let Some((verb, _)) = words.iter().find(|(_, w)| w.eq_ignore_ascii_case(word)) else {
+        return use_lines
+            .iter()
+            .filter(|(_, l)| starts(l, input))
+            .map(|(_, l)| l.to_string())
+            .collect();
     };
     let prefix = format!("/{word} ");
     let filter = |choices: &[String], typed: &str, head: &str| -> Vec<String> {
-        let typed = typed.trim_start().to_lowercase();
+        let typed = typed.trim_start();
         choices
             .iter()
-            .filter(|c| c.to_lowercase().starts_with(&typed))
+            .filter(|c| starts(c, typed))
             .map(|c| format!("{head}{c}"))
             .collect()
     };
-    if *verb_name == VerbName::Throw {
+    if verb.name == VerbName::Throw {
         if let Some((thing, aim)) = arg.split_once(" at ") {
             let aims = verb.aims.clone().unwrap_or_default();
             return filter(&aims, aim, &format!("{prefix}{thing} at "));
@@ -136,14 +158,40 @@ pub fn completions(glance: &Glance, input: &str) -> Vec<String> {
     filter(&verb.targets, arg, &prefix)
 }
 
+/// What the player types before a `use` target to have Tab complete it to
+/// the target's line. The engine never sees it.
+const USE: &str = "use";
+
+/// The line to send for what the player typed: `/use <target>` becomes the
+/// line the engine gave for that target, and anything else is sent as it is.
+pub fn line_to_send(glance: &Glance, typed: &str) -> String {
+    let target = typed
+        .strip_prefix('/')
+        .and_then(|rest| rest.split_once(' '))
+        .filter(|(word, _)| word.eq_ignore_ascii_case(USE))
+        .map(|(_, target)| target.trim());
+    let line = target.and_then(|target| {
+        let verb = glance.verb(VerbName::Use)?;
+        let i = verb
+            .targets
+            .iter()
+            .position(|t| t.eq_ignore_ascii_case(target))?;
+        verb.lines.as_ref()?.get(i)?.clone()
+    });
+    line.unwrap_or_else(|| typed.to_string())
+}
+
 /// The verbs a player can type now, for the input's title.
 pub fn verb_hint(glance: &Glance) -> String {
     glance
         .verbs
         .iter()
         .filter(|v| v.available)
-        .filter_map(|v| typed_word(v.name))
-        .map(|w| format!("/{w}"))
+        .filter_map(|v| match (&v.word, &v.lines) {
+            (Some(w), _) => Some(format!("/{w}")),
+            (None, Some(_)) if v.name == VerbName::Use => Some(format!("/{USE}")),
+            _ => None,
+        })
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -162,8 +210,31 @@ mod tests {
             completions(&g, "/go "),
             vec!["/go The Causeway Court", "/go The Sea Stair"]
         );
-        assert!(completions(&g, "/use ").is_empty(), "use has no targets");
+        assert_eq!(
+            completions(&g, "/use off"),
+            vec!["/offer Assize tide-slate to Neb Halloran"],
+            "a use target completes to the line that plays it"
+        );
+        assert_eq!(
+            completions(&g, "/of"),
+            vec!["/offer Assize tide-slate to Neb Halloran"]
+        );
+        assert_eq!(completions(&g, "/u"), vec!["/use "]);
         assert!(completions(&g, "look").is_empty());
+    }
+
+    #[test]
+    fn a_use_target_is_sent_as_its_line() {
+        let g = sample_glance();
+        assert_eq!(
+            line_to_send(
+                &g,
+                "/use offer assize tide-slate to Neb Halloran; they may refuse"
+            ),
+            "/offer Assize tide-slate to Neb Halloran"
+        );
+        assert_eq!(line_to_send(&g, "/use nothing"), "/use nothing");
+        assert_eq!(line_to_send(&g, "/go The Sea Stair"), "/go The Sea Stair");
     }
 
     #[test]

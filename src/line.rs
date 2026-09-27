@@ -14,6 +14,11 @@ pub struct Options {
     pub json: bool,
 }
 
+enum Step {
+    Follow(String),
+    Send(String),
+}
+
 /// Returns how many lines the engine refused with an error.
 pub fn run(
     engine: &dyn Engine,
@@ -29,18 +34,36 @@ pub fn run(
             writeln!(out, "{}\n", last.text)?;
         }
     }
+    let mut glance = screen.glance.clone();
     let mut errors = 0;
-    for line in input.lines() {
-        let line = line?;
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        let result = engine
-            .send_turn(&game, line, &new_request_token())
-            .and_then(|turn| follow_turn(engine, &game, &turn.id, reconnect, |_| {}));
+    // A turn the engine is still playing is followed to its end before any
+    // new line is read.
+    let running = screen
+        .standing
+        .running_turn
+        .clone()
+        .filter(|_| screen.standing.busy)
+        .map(|turn| Ok(Step::Follow(turn)));
+    let typed = input.lines().map(|l| l.map(Step::Send));
+    for step in running.into_iter().chain(typed) {
+        let result = match step? {
+            Step::Follow(turn) => follow_turn(engine, &game, &turn, reconnect, |_| {}),
+            Step::Send(line) => {
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                let line = present::line_to_send(&glance, line);
+                engine
+                    .send_turn(&game, &line, &new_request_token())
+                    .and_then(|turn| follow_turn(engine, &game, &turn.id, reconnect, |_| {}))
+            }
+        };
         match result {
-            Ok(finished) => write_finished(out, &finished, options)?,
+            Ok(finished) => {
+                write_finished(out, &finished, options)?;
+                glance = finished.glance;
+            }
             Err(e) => {
                 errors += 1;
                 let (message, hint) = present::error_lines(&e);

@@ -270,7 +270,9 @@
           "available",
           "reason",
           "targets",
-          "aims"
+          "aims",
+          "word",
+          "lines"
         ],
         "properties": {
           "name": {
@@ -310,6 +312,26 @@
             "items": {
               "type": "string"
             }
+          },
+          "word": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The word the engine reads after a slash for this verb, as in `/word target`. Null for `use`, whose targets each carry a line of their own. Since revision 1.1."
+          },
+          "lines": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": "For `use` only (null for every other verb): the exact line to send to play each target, in the order of `targets`. An entry is null when the line would play another target named the same way. Since revision 1.1."
           }
         }
       },
@@ -461,7 +483,8 @@
           "over",
           "ended",
           "busy",
-          "saved_turn"
+          "saved_turn",
+          "running_turn"
         ],
         "properties": {
           "over": {
@@ -485,6 +508,13 @@
                 "$ref": "#/components/schemas/SavedTurn"
               }
             ]
+          },
+          "running_turn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "While `busy`, the id of the turn in hand (the oldest, when more than one is waiting); open its events to follow it. Null when not busy. Since revision 1.1."
           }
         }
       },
@@ -604,7 +634,13 @@
           "line": {
             "type": "string"
           }
-        }
+        },
+        "examples": [
+          {
+            "turn": "412",
+            "line": "/offer tide-slate to Ammon Brace"
+          }
+        ]
       },
       "ProseEvent": {
         "type": "object",
@@ -619,7 +655,13 @@
           "text": {
             "type": "string"
           }
-        }
+        },
+        "examples": [
+          {
+            "turn": "412",
+            "text": "Ammon turns the slate over in his hands. "
+          }
+        ]
       },
       "GlanceEvent": {
         "type": "object",
@@ -634,7 +676,149 @@
           "glance": {
             "$ref": "#/components/schemas/Glance"
           }
-        }
+        },
+        "examples": [
+          {
+            "turn": "412",
+            "glance": {
+              "room": {
+                "name": "Ward Office 12",
+                "within": "St. Brennan's Infirmary"
+              },
+              "exits": [
+                {
+                  "name": "The Supply Closet",
+                  "written": true,
+                  "open": true
+                }
+              ],
+              "people": [
+                {
+                  "name": "Ammon Brace",
+                  "condition": "unhurt",
+                  "foe": false,
+                  "provoked": false
+                }
+              ],
+              "lying_here": [
+                {
+                  "name": "brass lamp"
+                }
+              ],
+              "carrying": [
+                {
+                  "name": "tide-slate"
+                }
+              ],
+              "condition": "unhurt",
+              "sheet": [
+                "level 1, hit die d8",
+                "strength 12, agility 10, wits 14"
+              ],
+              "next_beat": "Find out who signed the night ledger.",
+              "story_time": "1894-03-02T23:40:00Z",
+              "over": false,
+              "ended": null,
+              "verbs": [
+                {
+                  "name": "move",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "The Supply Closet"
+                  ],
+                  "aims": null,
+                  "word": "go",
+                  "lines": null
+                },
+                {
+                  "name": "talk",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "Ammon Brace"
+                  ],
+                  "aims": null,
+                  "word": "talk",
+                  "lines": null
+                },
+                {
+                  "name": "examine",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "tide-slate",
+                    "brass lamp"
+                  ],
+                  "aims": null,
+                  "word": "inspect",
+                  "lines": null
+                },
+                {
+                  "name": "take",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "brass lamp"
+                  ],
+                  "aims": null,
+                  "word": "take",
+                  "lines": null
+                },
+                {
+                  "name": "drop",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "tide-slate"
+                  ],
+                  "aims": null,
+                  "word": "drop",
+                  "lines": null
+                },
+                {
+                  "name": "attack",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "Ammon Brace"
+                  ],
+                  "aims": null,
+                  "word": "attack",
+                  "lines": null
+                },
+                {
+                  "name": "throw",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "tide-slate",
+                    "brass lamp"
+                  ],
+                  "aims": [
+                    "Ammon Brace",
+                    "The Supply Closet"
+                  ],
+                  "word": "throw",
+                  "lines": null
+                },
+                {
+                  "name": "use",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "Offer tide-slate to Ammon Brace; they may refuse"
+                  ],
+                  "aims": null,
+                  "word": null,
+                  "lines": [
+                    "/offer tide-slate to Ammon Brace"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
       },
       "FinishedEvent": {
         "type": "object",
@@ -776,7 +960,171 @@
               }
             }
           }
-        }
+        },
+        "examples": [
+          {
+            "turn": "412",
+            "outcome": {
+              "kind": "used"
+            },
+            "refusal": null,
+            "resolved_by": "grammar",
+            "rolls": [
+              {
+                "kind": "check",
+                "die": 20,
+                "result": 7,
+                "target": 10
+              }
+            ],
+            "text": "Ammon turns the slate over in his hands, and keeps it.",
+            "notices": [],
+            "glance": {
+              "room": {
+                "name": "Ward Office 12",
+                "within": "St. Brennan's Infirmary"
+              },
+              "exits": [
+                {
+                  "name": "The Supply Closet",
+                  "written": true,
+                  "open": true
+                }
+              ],
+              "people": [
+                {
+                  "name": "Ammon Brace",
+                  "condition": "unhurt",
+                  "foe": false,
+                  "provoked": false
+                }
+              ],
+              "lying_here": [
+                {
+                  "name": "brass lamp"
+                }
+              ],
+              "carrying": [
+                {
+                  "name": "tide-slate"
+                }
+              ],
+              "condition": "unhurt",
+              "sheet": [
+                "level 1, hit die d8",
+                "strength 12, agility 10, wits 14"
+              ],
+              "next_beat": "Find out who signed the night ledger.",
+              "story_time": "1894-03-02T23:40:00Z",
+              "over": false,
+              "ended": null,
+              "verbs": [
+                {
+                  "name": "move",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "The Supply Closet"
+                  ],
+                  "aims": null,
+                  "word": "go",
+                  "lines": null
+                },
+                {
+                  "name": "talk",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "Ammon Brace"
+                  ],
+                  "aims": null,
+                  "word": "talk",
+                  "lines": null
+                },
+                {
+                  "name": "examine",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "tide-slate",
+                    "brass lamp"
+                  ],
+                  "aims": null,
+                  "word": "inspect",
+                  "lines": null
+                },
+                {
+                  "name": "take",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "brass lamp"
+                  ],
+                  "aims": null,
+                  "word": "take",
+                  "lines": null
+                },
+                {
+                  "name": "drop",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "tide-slate"
+                  ],
+                  "aims": null,
+                  "word": "drop",
+                  "lines": null
+                },
+                {
+                  "name": "attack",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "Ammon Brace"
+                  ],
+                  "aims": null,
+                  "word": "attack",
+                  "lines": null
+                },
+                {
+                  "name": "throw",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "tide-slate",
+                    "brass lamp"
+                  ],
+                  "aims": [
+                    "Ammon Brace",
+                    "The Supply Closet"
+                  ],
+                  "word": "throw",
+                  "lines": null
+                },
+                {
+                  "name": "use",
+                  "available": true,
+                  "reason": null,
+                  "targets": [
+                    "Offer tide-slate to Ammon Brace; they may refuse"
+                  ],
+                  "aims": null,
+                  "word": null,
+                  "lines": [
+                    "/offer tide-slate to Ammon Brace"
+                  ]
+                }
+              ]
+            },
+            "standing": {
+              "over": false,
+              "ended": null,
+              "busy": false,
+              "running_turn": null,
+              "saved_turn": null
+            }
+          }
+        ]
       }
     }
   },
@@ -797,6 +1145,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Service"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "protocol": "text-adventure-engine",
+                      "version": 1,
+                      "capabilities": [
+                        "worlds",
+                        "games",
+                        "turns",
+                        "turn_events",
+                        "interruptions",
+                        "spend_limit"
+                      ],
+                      "engine": {
+                        "name": "an-engine",
+                        "version": "dev"
+                      },
+                      "world_schema": "20260927180411",
+                      "player": {
+                        "name": "Ada",
+                        "spend": {
+                          "used_usd": 0.12,
+                          "held_usd": 0.03,
+                          "limit_usd": 1.0,
+                          "turn_reservation_usd": 0.03,
+                          "period_ends_at": "2026-10-01T00:00:00Z"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -807,6 +1186,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -825,6 +1214,19 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WorldList"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "worlds": [
+                        {
+                          "id": "7",
+                          "title": "The Ward",
+                          "summary": "A hospital at night."
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -835,6 +1237,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -853,6 +1265,24 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GameList"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "games": [
+                        {
+                          "id": "k3v9QeT0bL2x",
+                          "world": {
+                            "id": "7",
+                            "title": "The Ward",
+                            "summary": "A hospital at night."
+                          },
+                          "over": false,
+                          "started_at": "2026-09-27T18:04:11Z"
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -863,6 +1293,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -886,6 +1326,13 @@
                     "type": "string"
                   }
                 }
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "world": "7"
+                  }
+                }
               }
             }
           }
@@ -897,6 +1344,175 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Screen"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "game": {
+                        "id": "k3v9QeT0bL2x",
+                        "world": {
+                          "id": "7",
+                          "title": "The Ward",
+                          "summary": "A hospital at night."
+                        },
+                        "over": false,
+                        "started_at": "2026-09-27T18:04:11Z"
+                      },
+                      "glance": {
+                        "room": {
+                          "name": "Ward Office 12",
+                          "within": "St. Brennan's Infirmary"
+                        },
+                        "exits": [
+                          {
+                            "name": "The Supply Closet",
+                            "written": true,
+                            "open": true
+                          }
+                        ],
+                        "people": [
+                          {
+                            "name": "Ammon Brace",
+                            "condition": "unhurt",
+                            "foe": false,
+                            "provoked": false
+                          }
+                        ],
+                        "lying_here": [
+                          {
+                            "name": "brass lamp"
+                          }
+                        ],
+                        "carrying": [
+                          {
+                            "name": "tide-slate"
+                          }
+                        ],
+                        "condition": "unhurt",
+                        "sheet": [
+                          "level 1, hit die d8",
+                          "strength 12, agility 10, wits 14"
+                        ],
+                        "next_beat": "Find out who signed the night ledger.",
+                        "story_time": "1894-03-02T23:40:00Z",
+                        "over": false,
+                        "ended": null,
+                        "verbs": [
+                          {
+                            "name": "move",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "The Supply Closet"
+                            ],
+                            "aims": null,
+                            "word": "go",
+                            "lines": null
+                          },
+                          {
+                            "name": "talk",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "Ammon Brace"
+                            ],
+                            "aims": null,
+                            "word": "talk",
+                            "lines": null
+                          },
+                          {
+                            "name": "examine",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "tide-slate",
+                              "brass lamp"
+                            ],
+                            "aims": null,
+                            "word": "inspect",
+                            "lines": null
+                          },
+                          {
+                            "name": "take",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "brass lamp"
+                            ],
+                            "aims": null,
+                            "word": "take",
+                            "lines": null
+                          },
+                          {
+                            "name": "drop",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "tide-slate"
+                            ],
+                            "aims": null,
+                            "word": "drop",
+                            "lines": null
+                          },
+                          {
+                            "name": "attack",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "Ammon Brace"
+                            ],
+                            "aims": null,
+                            "word": "attack",
+                            "lines": null
+                          },
+                          {
+                            "name": "throw",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "tide-slate",
+                              "brass lamp"
+                            ],
+                            "aims": [
+                              "Ammon Brace",
+                              "The Supply Closet"
+                            ],
+                            "word": "throw",
+                            "lines": null
+                          },
+                          {
+                            "name": "use",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "Offer tide-slate to Ammon Brace; they may refuse"
+                            ],
+                            "aims": null,
+                            "word": null,
+                            "lines": [
+                              "/offer tide-slate to Ammon Brace"
+                            ]
+                          }
+                        ]
+                      },
+                      "standing": {
+                        "over": false,
+                        "ended": null,
+                        "busy": false,
+                        "running_turn": null,
+                        "saved_turn": null
+                      },
+                      "log": [
+                        {
+                          "id": "88",
+                          "typed": "look around",
+                          "text": "A desk under a lamp, and a ledger left open.",
+                          "talking_to": [],
+                          "notices": []
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -907,6 +1523,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -917,6 +1543,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "message": "There is no such game."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -927,6 +1563,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unplayable",
+                        "message": "This world has nobody to play."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -955,6 +1601,175 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Screen"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "game": {
+                        "id": "k3v9QeT0bL2x",
+                        "world": {
+                          "id": "7",
+                          "title": "The Ward",
+                          "summary": "A hospital at night."
+                        },
+                        "over": false,
+                        "started_at": "2026-09-27T18:04:11Z"
+                      },
+                      "glance": {
+                        "room": {
+                          "name": "Ward Office 12",
+                          "within": "St. Brennan's Infirmary"
+                        },
+                        "exits": [
+                          {
+                            "name": "The Supply Closet",
+                            "written": true,
+                            "open": true
+                          }
+                        ],
+                        "people": [
+                          {
+                            "name": "Ammon Brace",
+                            "condition": "unhurt",
+                            "foe": false,
+                            "provoked": false
+                          }
+                        ],
+                        "lying_here": [
+                          {
+                            "name": "brass lamp"
+                          }
+                        ],
+                        "carrying": [
+                          {
+                            "name": "tide-slate"
+                          }
+                        ],
+                        "condition": "unhurt",
+                        "sheet": [
+                          "level 1, hit die d8",
+                          "strength 12, agility 10, wits 14"
+                        ],
+                        "next_beat": "Find out who signed the night ledger.",
+                        "story_time": "1894-03-02T23:40:00Z",
+                        "over": false,
+                        "ended": null,
+                        "verbs": [
+                          {
+                            "name": "move",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "The Supply Closet"
+                            ],
+                            "aims": null,
+                            "word": "go",
+                            "lines": null
+                          },
+                          {
+                            "name": "talk",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "Ammon Brace"
+                            ],
+                            "aims": null,
+                            "word": "talk",
+                            "lines": null
+                          },
+                          {
+                            "name": "examine",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "tide-slate",
+                              "brass lamp"
+                            ],
+                            "aims": null,
+                            "word": "inspect",
+                            "lines": null
+                          },
+                          {
+                            "name": "take",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "brass lamp"
+                            ],
+                            "aims": null,
+                            "word": "take",
+                            "lines": null
+                          },
+                          {
+                            "name": "drop",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "tide-slate"
+                            ],
+                            "aims": null,
+                            "word": "drop",
+                            "lines": null
+                          },
+                          {
+                            "name": "attack",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "Ammon Brace"
+                            ],
+                            "aims": null,
+                            "word": "attack",
+                            "lines": null
+                          },
+                          {
+                            "name": "throw",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "tide-slate",
+                              "brass lamp"
+                            ],
+                            "aims": [
+                              "Ammon Brace",
+                              "The Supply Closet"
+                            ],
+                            "word": "throw",
+                            "lines": null
+                          },
+                          {
+                            "name": "use",
+                            "available": true,
+                            "reason": null,
+                            "targets": [
+                              "Offer tide-slate to Ammon Brace; they may refuse"
+                            ],
+                            "aims": null,
+                            "word": null,
+                            "lines": [
+                              "/offer tide-slate to Ammon Brace"
+                            ]
+                          }
+                        ]
+                      },
+                      "standing": {
+                        "over": false,
+                        "ended": null,
+                        "busy": true,
+                        "running_turn": "412",
+                        "saved_turn": null
+                      },
+                      "log": [
+                        {
+                          "id": "88",
+                          "typed": "look around",
+                          "text": "A desk under a lamp, and a ledger left open.",
+                          "talking_to": [],
+                          "notices": []
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -965,6 +1780,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -975,6 +1800,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "message": "There is no such game."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1014,6 +1849,14 @@
                     "maxLength": 128
                   }
                 }
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "line": "/offer tide-slate to Ammon Brace",
+                    "request_token": "c1b2-0001"
+                  }
+                }
               }
             }
           }
@@ -1025,6 +1868,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TurnAccepted"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "turn": {
+                        "id": "412",
+                        "line": "/offer tide-slate to Ammon Brace",
+                        "request_token": "c1b2-0001"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1035,6 +1889,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1045,6 +1909,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "limit_reached",
+                        "message": "This month's allowance is used up."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1055,6 +1929,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "message": "There is no such game."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1065,6 +1949,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "conflict",
+                        "message": "That turn could not be accepted as sent."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1075,6 +1969,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "blank_line",
+                        "message": "Nothing was typed, so there is no turn."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1085,6 +1989,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "That is more than 10 turns in a minute. Wait a moment and send it again."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1137,6 +2051,11 @@
               "text/event-stream": {
                 "schema": {
                   "type": "string"
+                },
+                "examples": {
+                  "example": {
+                    "value": "id: 1\nevent: started\ndata: {\"turn\":\"412\",\"line\":\"/offer tide-slate to Ammon Brace\"}\n\nid: 2\nevent: prose\ndata: {\"turn\":\"412\",\"text\":\"Ammon turns the slate over in his hands. \"}\n\nid: 3\nevent: glance\ndata: {\"turn\":\"412\",\"glance\":{\"room\":{\"name\":\"Ward Office 12\",\"within\":\"St. Brennan's Infirmary\"},\"exits\":[{\"name\":\"The Supply Closet\",\"written\":true,\"open\":true}],\"people\":[{\"name\":\"Ammon Brace\",\"condition\":\"unhurt\",\"foe\":false,\"provoked\":false}],\"lying_here\":[{\"name\":\"brass lamp\"}],\"carrying\":[{\"name\":\"tide-slate\"}],\"condition\":\"unhurt\",\"sheet\":[\"level 1, hit die d8\",\"strength 12, agility 10, wits 14\"],\"next_beat\":\"Find out who signed the night ledger.\",\"story_time\":\"1894-03-02T23:40:00Z\",\"over\":false,\"ended\":null,\"verbs\":[{\"name\":\"move\",\"available\":true,\"reason\":null,\"targets\":[\"The Supply Closet\"],\"aims\":null,\"word\":\"go\",\"lines\":null},{\"name\":\"talk\",\"available\":true,\"reason\":null,\"targets\":[\"Ammon Brace\"],\"aims\":null,\"word\":\"talk\",\"lines\":null},{\"name\":\"examine\",\"available\":true,\"reason\":null,\"targets\":[\"tide-slate\",\"brass lamp\"],\"aims\":null,\"word\":\"inspect\",\"lines\":null},{\"name\":\"take\",\"available\":true,\"reason\":null,\"targets\":[\"brass lamp\"],\"aims\":null,\"word\":\"take\",\"lines\":null},{\"name\":\"drop\",\"available\":true,\"reason\":null,\"targets\":[\"tide-slate\"],\"aims\":null,\"word\":\"drop\",\"lines\":null},{\"name\":\"attack\",\"available\":true,\"reason\":null,\"targets\":[\"Ammon Brace\"],\"aims\":null,\"word\":\"attack\",\"lines\":null},{\"name\":\"throw\",\"available\":true,\"reason\":null,\"targets\":[\"tide-slate\",\"brass lamp\"],\"aims\":[\"Ammon Brace\",\"The Supply Closet\"],\"word\":\"throw\",\"lines\":null},{\"name\":\"use\",\"available\":true,\"reason\":null,\"targets\":[\"Offer tide-slate to Ammon Brace; they may refuse\"],\"aims\":null,\"word\":null,\"lines\":[\"/offer tide-slate to Ammon Brace\"]}]}}\n\nid: 4\nevent: finished\ndata: {\"turn\":\"412\",\"outcome\":{\"kind\":\"used\"},\"refusal\":null,\"resolved_by\":\"grammar\",\"rolls\":[{\"kind\":\"check\",\"die\":20,\"result\":7,\"target\":10}],\"text\":\"Ammon turns the slate over in his hands, and keeps it.\",\"notices\":[],\"glance\":{\"room\":{\"name\":\"Ward Office 12\",\"within\":\"St. Brennan's Infirmary\"},\"exits\":[{\"name\":\"The Supply Closet\",\"written\":true,\"open\":true}],\"people\":[{\"name\":\"Ammon Brace\",\"condition\":\"unhurt\",\"foe\":false,\"provoked\":false}],\"lying_here\":[{\"name\":\"brass lamp\"}],\"carrying\":[{\"name\":\"tide-slate\"}],\"condition\":\"unhurt\",\"sheet\":[\"level 1, hit die d8\",\"strength 12, agility 10, wits 14\"],\"next_beat\":\"Find out who signed the night ledger.\",\"story_time\":\"1894-03-02T23:40:00Z\",\"over\":false,\"ended\":null,\"verbs\":[{\"name\":\"move\",\"available\":true,\"reason\":null,\"targets\":[\"The Supply Closet\"],\"aims\":null,\"word\":\"go\",\"lines\":null},{\"name\":\"talk\",\"available\":true,\"reason\":null,\"targets\":[\"Ammon Brace\"],\"aims\":null,\"word\":\"talk\",\"lines\":null},{\"name\":\"examine\",\"available\":true,\"reason\":null,\"targets\":[\"tide-slate\",\"brass lamp\"],\"aims\":null,\"word\":\"inspect\",\"lines\":null},{\"name\":\"take\",\"available\":true,\"reason\":null,\"targets\":[\"brass lamp\"],\"aims\":null,\"word\":\"take\",\"lines\":null},{\"name\":\"drop\",\"available\":true,\"reason\":null,\"targets\":[\"tide-slate\"],\"aims\":null,\"word\":\"drop\",\"lines\":null},{\"name\":\"attack\",\"available\":true,\"reason\":null,\"targets\":[\"Ammon Brace\"],\"aims\":null,\"word\":\"attack\",\"lines\":null},{\"name\":\"throw\",\"available\":true,\"reason\":null,\"targets\":[\"tide-slate\",\"brass lamp\"],\"aims\":[\"Ammon Brace\",\"The Supply Closet\"],\"word\":\"throw\",\"lines\":null},{\"name\":\"use\",\"available\":true,\"reason\":null,\"targets\":[\"Offer tide-slate to Ammon Brace; they may refuse\"],\"aims\":null,\"word\":null,\"lines\":[\"/offer tide-slate to Ammon Brace\"]}]},\"standing\":{\"over\":false,\"ended\":null,\"busy\":false,\"running_turn\":null,\"saved_turn\":null}}\n\n"
+                  }
                 }
               }
             }
@@ -1147,6 +2066,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1157,6 +2086,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "message": "There is no such game."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1193,6 +2132,19 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StandingResponse"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "standing": {
+                        "over": false,
+                        "ended": null,
+                        "busy": false,
+                        "running_turn": null,
+                        "saved_turn": null
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1203,6 +2155,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "message": "That token is not valid."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1213,6 +2175,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "message": "There is no such game."
+                      }
+                    }
+                  }
                 }
               }
             }

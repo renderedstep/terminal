@@ -74,6 +74,27 @@ impl FakeEngine {
         self.state.lock().unwrap().sent_lines.clone()
     }
 
+    /// Send `line` as a turn and leave the game busy with it, as an engine
+    /// does while the turn is still playing. Returns the turn's id.
+    pub fn leave_running(&self, line: &str) -> String {
+        let game = self
+            .state
+            .lock()
+            .unwrap()
+            .screen
+            .as_ref()
+            .unwrap()
+            .game
+            .id
+            .clone();
+        let turn = self.send_turn(&game, line, "running").unwrap();
+        let mut s = self.state.lock().unwrap();
+        let standing = &mut s.screen.as_mut().unwrap().standing;
+        standing.busy = true;
+        standing.running_turn = Some(turn.id.clone());
+        turn.id
+    }
+
     pub fn set_screen(&self, screen: Screen) {
         self.state.lock().unwrap().screen = Some(screen);
     }
@@ -311,11 +332,12 @@ pub fn sample_standing() -> Standing {
         over: false,
         ended: None,
         busy: false,
+        running_turn: None,
         saved_turn: None,
     }
 }
 
-fn verb(name: VerbName, targets: &[&str]) -> Verb {
+fn verb(name: VerbName, word: &str, targets: &[&str]) -> Verb {
     Verb {
         name,
         available: !targets.is_empty(),
@@ -326,6 +348,20 @@ fn verb(name: VerbName, targets: &[&str]) -> Verb {
         },
         targets: targets.iter().map(|t| t.to_string()).collect(),
         aims: None,
+        word: Some(word.into()),
+        lines: None,
+    }
+}
+
+fn use_verb(targets: &[(&str, &str)]) -> Verb {
+    Verb {
+        name: VerbName::Use,
+        available: !targets.is_empty(),
+        reason: None,
+        targets: targets.iter().map(|(t, _)| t.to_string()).collect(),
+        aims: None,
+        word: None,
+        lines: Some(targets.iter().map(|(_, l)| Some(l.to_string())).collect()),
     }
 }
 
@@ -374,17 +410,25 @@ pub fn sample_glance() -> Glance {
         over: false,
         ended: None,
         verbs: vec![
-            verb(VerbName::Move, &["The Causeway Court", "The Sea Stair"]),
-            verb(VerbName::Talk, &["Neb Halloran", "The Tollman"]),
+            verb(
+                VerbName::Move,
+                "go",
+                &["The Causeway Court", "The Sea Stair"],
+            ),
+            verb(VerbName::Talk, "talk", &["Neb Halloran", "The Tollman"]),
             verb(
                 VerbName::Examine,
+                "inspect",
                 &["Filing press", "Assize tide-slate", "Neb Halloran"],
             ),
-            verb(VerbName::Take, &["Filing press"]),
-            verb(VerbName::Drop, &["Assize tide-slate"]),
-            verb(VerbName::Attack, &["The Tollman"]),
-            verb(VerbName::Throw, &["Assize tide-slate"]),
-            verb(VerbName::Use, &[]),
+            verb(VerbName::Take, "take", &["Filing press"]),
+            verb(VerbName::Drop, "drop", &["Assize tide-slate"]),
+            verb(VerbName::Attack, "attack", &["The Tollman"]),
+            verb(VerbName::Throw, "throw", &["Assize tide-slate"]),
+            use_verb(&[(
+                "Offer Assize tide-slate to Neb Halloran; they may refuse",
+                "/offer Assize tide-slate to Neb Halloran",
+            )]),
         ],
     }
 }

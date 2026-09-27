@@ -1,6 +1,6 @@
 ---
 source: tests/tui.rs
-assertion_line: 65
+assertion_line: 69
 expression: "render(&app(), 110, 34)"
 ---
 ┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
@@ -34,6 +34,6 @@ expression: "render(&app(), 110, 34)"
 │                                                                          │                                  
 │                                                                          │                                  
 └──────────────────────────────────────────────────────────────────────────┘                                  
-┌ /go /talk /inspect /take /drop /attack /throw ───────────────────────────┐                                  
+┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐                                  
 │>                                                                         │                                  
 └─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘

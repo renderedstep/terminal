@@ -6,7 +6,7 @@
 //! these types unchanged, so a field the spec has and these types lack fails
 //! the build.
 //!
-//! v1 only grows: unknown fields are ignored on read. Enums are closed in the
+//! This is revision 1.1. v1 only grows: unknown fields are ignored on read. Enums are closed in the
 //! spec, but a value outside the list reads as `Unknown` rather than failing
 //! the whole payload, so one engine bug cannot blank the screen.
 
@@ -139,6 +139,12 @@ pub struct Verb {
     pub reason: Option<String>,
     pub targets: Vec<String>,
     pub aims: Option<Vec<String>>,
+    /// What the engine reads after a slash for this verb (`/word target`).
+    /// `None` for `use`, and from an engine older than revision 1.1.
+    pub word: Option<String>,
+    /// For `use` only: the exact line that plays each target, in the order of
+    /// `targets`. An entry is `None` when no line plays that target alone.
+    pub lines: Option<Vec<Option<String>>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -186,6 +192,8 @@ pub struct Standing {
     pub over: bool,
     pub ended: Option<String>,
     pub busy: bool,
+    /// While `busy`, the turn in hand, whose events can be followed.
+    pub running_turn: Option<String>,
     pub saved_turn: Option<SavedTurn>,
 }
 
