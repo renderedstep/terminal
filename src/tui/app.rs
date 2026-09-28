@@ -47,6 +47,8 @@ pub enum EngineMsg {
 }
 
 pub struct App {
+    /// The game's id.
+    pub game: String,
     pub title: String,
     pub engine_label: String,
     pub glance: Glance,
@@ -67,6 +69,7 @@ pub struct App {
 impl App {
     pub fn new(screen: Screen, engine_label: String) -> Self {
         let mut app = Self {
+            game: screen.game.id.clone(),
             title: screen.game.world.title.clone(),
             engine_label,
             glance: screen.glance.clone(),

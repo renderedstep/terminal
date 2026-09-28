@@ -296,6 +296,15 @@ pub fn panel_listing(g: &Glance, cmd: &str) -> Option<String> {
 }
 
 /// The full-screen client's own commands, for `:help`.
+/// A game's start time as the start screen shows it: `2026-09-20 18:00`
+/// from the protocol's `2026-09-20T18:00:00Z`. Anything else is shown as sent.
+pub fn started(at: &str) -> String {
+    match (at.get(..10), at.get(10..11), at.get(11..16)) {
+        (Some(day), Some("T"), Some(time)) => format!("{day} {time}"),
+        _ => at.to_string(),
+    }
+}
+
 pub const TUI_HELP: &str = "\
 Client commands:
   :exits      list every way out

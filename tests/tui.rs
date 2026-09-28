@@ -1,5 +1,6 @@
 //! The TUI's screens, drawn into a test terminal and compared with
-//! snapshots, and its flow driven against the fake engine.
+//! snapshots, and its flow driven against the fake engine. The start screen
+//! and `--resume` too.
 
 use std::sync::mpsc;
 use std::sync::Arc;
@@ -9,16 +10,21 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::backend::TestBackend;
 use ratatui::Terminal;
 use text_adventure_terminal::engine::fake::{
-    sample_glance, sample_screen, sample_standing, FakeEngine, ScriptedTurn,
+    sample_glance, sample_screen, sample_standing, sample_world, FakeEngine, ScriptedTurn,
 };
 use text_adventure_terminal::engine::{Engine, EngineError};
 use text_adventure_terminal::protocol::*;
 use text_adventure_terminal::tui::app::{App, Command, EngineMsg, Entry};
-use text_adventure_terminal::tui::{execute, view};
+use text_adventure_terminal::tui::start::{latest_unfinished, Choice, Start};
+use text_adventure_terminal::tui::{self, execute, view, Opening};
 
 fn render(app: &App, width: u16, height: u16) -> String {
+    draw_text(width, height, |f| view::draw(f, app))
+}
+
+fn draw_text(width: u16, height: u16, draw: impl FnOnce(&mut ratatui::Frame)) -> String {
     let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
-    terminal.draw(|f| view::draw(f, app)).unwrap();
+    terminal.draw(draw).unwrap();
     let buffer = terminal.backend().buffer().clone();
     let mut out = String::new();
     for y in 0..height {
@@ -415,4 +421,162 @@ fn listing_commands_work_while_a_turn_runs() {
     type_line(&mut app, ":exits");
     app.on_key(key(KeyCode::Enter));
     assert!(matches!(app.log.last(), Some(Entry::Notice(t)) if t.starts_with("Ways out:")));
+}
+
+fn render_start(start: &Start, width: u16, height: u16) -> String {
+    draw_text(width, height, |f| view::draw_start(f, start))
+}
+
+fn game(id: &str, world: World, over: bool, started_at: &str) -> Game {
+    Game {
+        id: id.into(),
+        world,
+        over,
+        started_at: started_at.into(),
+    }
+}
+
+fn causeway() -> World {
+    World {
+        id: "world-causeway".into(),
+        title: "The Causeway".into(),
+        summary: "A drowned road, walked at low tide.".into(),
+    }
+}
+
+/// Three games, given oldest first: one over, one unfinished, and the
+/// unfinished one started last.
+fn sample_games() -> Vec<Game> {
+    vec![
+        game("game-0", causeway(), true, "2026-09-01T09:00:00Z"),
+        game("game-1", sample_world(), false, "2026-09-20T18:00:00Z"),
+        game("game-2", causeway(), false, "2026-09-25T07:30:00Z"),
+    ]
+}
+
+fn start() -> Start {
+    Start::new(
+        sample_games(),
+        vec![sample_world(), causeway()],
+        "Wren · fake 0.0.0".into(),
+    )
+}
+
+#[test]
+fn the_start_screen_lists_games_then_worlds() {
+    let screen = render_start(&start(), 80, 20);
+    let continue_at = screen.find("Continue").unwrap();
+    let new_at = screen.find("New game").unwrap();
+    assert!(continue_at < new_at);
+    insta::assert_snapshot!(screen);
+}
+
+#[test]
+fn the_start_screen_offers_unfinished_games_first_latest_first() {
+    let start = start();
+    let ids: Vec<&str> = start.games.iter().map(|g| g.id.as_str()).collect();
+    assert_eq!(ids, ["game-2", "game-1", "game-0"]);
+    assert_eq!(start.choice(), Some(Choice::Continue("game-2".into())));
+}
+
+#[test]
+fn the_start_screen_moves_through_games_into_worlds() {
+    let mut start = start();
+    assert_eq!(start.on_key(key(KeyCode::Up)), None);
+    assert_eq!(start.selected, 0, "Up at the top stays put");
+    start.on_key(key(KeyCode::Down));
+    start.on_key(key(KeyCode::Char('j')));
+    assert_eq!(start.choice(), Some(Choice::Continue("game-0".into())));
+    start.on_key(key(KeyCode::Down));
+    assert_eq!(
+        start.on_key(key(KeyCode::Enter)),
+        Some(Choice::New("world-fog".into()))
+    );
+    start.on_key(key(KeyCode::End));
+    start.on_key(key(KeyCode::Down));
+    assert_eq!(start.choice(), Some(Choice::New("world-causeway".into())));
+    start.on_key(key(KeyCode::Char('k')));
+    start.on_key(key(KeyCode::Home));
+    assert_eq!(start.choice(), Some(Choice::Continue("game-2".into())));
+    assert!(!start.quit);
+    start.on_key(key(KeyCode::Esc));
+    assert!(start.quit);
+}
+
+#[test]
+fn an_empty_start_screen_picks_nothing() {
+    let mut start = Start::new(vec![], vec![], String::new());
+    assert_eq!(start.on_key(key(KeyCode::Down)), None);
+    assert_eq!(start.on_key(key(KeyCode::Enter)), None);
+    let screen = render_start(&start, 80, 10);
+    assert!(screen.contains("No games yet."));
+    assert!(screen.contains("The engine offers no worlds."));
+}
+
+#[test]
+fn resume_picks_the_unfinished_game_started_last() {
+    let games = sample_games();
+    assert_eq!(latest_unfinished(&games).unwrap().id, "game-2");
+
+    // A finished game is never resumed, however recent.
+    let mut games = sample_games();
+    games.push(game("game-3", causeway(), true, "2026-09-27T12:00:00Z"));
+    assert_eq!(latest_unfinished(&games).unwrap().id, "game-2");
+
+    games.retain(|g| g.over);
+    assert_eq!(latest_unfinished(&games), None);
+    assert_eq!(latest_unfinished(&[]), None);
+}
+
+#[test]
+fn resume_opens_the_game_without_the_start_screen() {
+    let engine = FakeEngine::new();
+    let Opening::Game(screen) = tui::opening(&engine, true, "label").unwrap() else {
+        panic!("--resume showed the start screen");
+    };
+    assert_eq!(screen.game.id, "game-1");
+}
+
+#[test]
+fn resume_with_nothing_to_resume_falls_back_to_the_start_screen() {
+    let engine = FakeEngine::new();
+    let mut over = sample_screen();
+    over.game.over = true;
+    engine.set_screen(over);
+    let Opening::Choose(start) = tui::opening(&engine, true, "label").unwrap() else {
+        panic!("resumed a finished game");
+    };
+    assert_eq!(start.status, "You have no unfinished game to resume.");
+    assert_eq!(start.choice(), Some(Choice::Continue("game-1".into())));
+}
+
+#[test]
+fn plain_ta_opens_on_the_start_screen() {
+    let engine = FakeEngine::new();
+    let Opening::Choose(start) = tui::opening(&engine, false, "label").unwrap() else {
+        panic!("opened a game without asking");
+    };
+    assert!(start.status.is_empty());
+    assert_eq!(start.games.len(), 1);
+    assert_eq!(start.worlds, vec![sample_world()]);
+}
+
+#[test]
+fn a_start_screen_choice_opens_its_game_or_starts_one() {
+    let engine = FakeEngine::new();
+    let screen = tui::open_choice(&engine, &Choice::Continue("game-1".into())).unwrap();
+    assert_eq!(screen.game.id, "game-1");
+    let screen = tui::open_choice(&engine, &Choice::New("world-fog".into())).unwrap();
+    assert_eq!(screen.game.world, sample_world());
+    let refused = tui::open_choice(&engine, &Choice::New("world-causeway".into())).unwrap_err();
+    assert_eq!(refused.code(), Some(ErrorCode::Unplayable));
+}
+
+#[test]
+fn a_short_start_screen_keeps_the_choice_in_view() {
+    let mut start = start();
+    start.on_key(key(KeyCode::End));
+    let screen = render_start(&start, 80, 8);
+    assert!(screen.contains("> The Causeway "), "{screen}");
+    assert!(screen.contains("A drowned road, walked at low tide."));
 }

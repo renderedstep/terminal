@@ -1,0 +1,24 @@
+---
+source: tests/tui.rs
+expression: screen
+---
+┌ Text Adventure ──────────────────────────────────────────────────────────────┐
+│Continue                                                                      │
+│> The Causeway  started 2026-09-25 07:30                                      │
+│  The Fog Harbour  started 2026-09-20 18:00                                   │
+│  The Causeway  started 2026-09-01 09:00  · over                              │
+│                                                                              │
+│New game                                                                      │
+│  The Fog Harbour                                                             │
+│    A harbour town where the fog keeps the hours.                             │
+│  The Causeway                                                                │
+│    A drowned road, walked at low tide.                                       │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+└ ↑↓ choose · Enter play · Esc quit ──────────────────────── Wren · fake 0.0.0 ┘

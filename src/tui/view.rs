@@ -1,5 +1,6 @@
 //! Drawing the TUI: the log and input on the left, the glance's panels on
 //! the right. Under 80 columns the panels fold into a short status block.
+//! Also the start screen, with games to continue and worlds to start in.
 
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -8,6 +9,7 @@ use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use ratatui::Frame;
 
 use super::app::{App, Entry};
+use super::start::Start;
 use crate::present;
 use crate::protocol::Glance;
 
@@ -367,4 +369,74 @@ fn status_lines(g: &Glance) -> Vec<Line<'static>> {
                 .unwrap_or_else(|| "no story beat ahead".into())
         )),
     ]
+}
+
+/// The start screen: games to continue, then worlds to start one in.
+pub fn draw_start(frame: &mut Frame, start: &Start) {
+    let dim = Style::default().fg(Color::DarkGray);
+    let bold = Style::default().add_modifier(Modifier::BOLD);
+    let mut lines: Vec<Line<'static>> = vec![];
+    let mut selected_line = 0;
+    let row = |lines: &mut Vec<Line<'static>>, selected: bool, spans: Vec<Span<'static>>| {
+        let marker = if selected { "> " } else { "  " };
+        let mut line = Line::from([vec![Span::raw(marker)], spans].concat());
+        if selected {
+            line = line.style(Style::default().add_modifier(Modifier::REVERSED));
+        }
+        lines.push(line);
+    };
+
+    lines.push(Line::styled("Continue", bold));
+    if start.games.is_empty() {
+        lines.push(Line::styled("  No games yet.", dim));
+    }
+    for (i, g) in start.games.iter().enumerate() {
+        let selected = start.selected == i;
+        if selected {
+            selected_line = lines.len();
+        }
+        let mut spans = vec![
+            Span::raw(g.world.title.clone()),
+            Span::styled(
+                format!("  started {}", present::started(&g.started_at)),
+                dim,
+            ),
+        ];
+        if g.over {
+            spans.push(Span::styled("  · over", dim));
+        }
+        row(&mut lines, selected, spans);
+    }
+
+    lines.push(Line::raw(""));
+    lines.push(Line::styled("New game", bold));
+    if start.worlds.is_empty() {
+        lines.push(Line::styled("  The engine offers no worlds.", dim));
+    }
+    for (i, w) in start.worlds.iter().enumerate() {
+        let selected = start.selected == start.games.len() + i;
+        if selected {
+            selected_line = lines.len();
+        }
+        row(&mut lines, selected, vec![Span::raw(w.title.clone())]);
+        if !w.summary.is_empty() {
+            lines.push(Line::styled(format!("    {}", w.summary), dim));
+        }
+    }
+
+    let footer = if start.status.is_empty() {
+        start.engine_label.clone()
+    } else {
+        start.status.clone()
+    };
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Text Adventure ")
+        .title_bottom(Line::from(" ↑↓ choose · Enter play · Esc quit ").left_aligned())
+        .title_bottom(Line::from(format!(" {footer} ")).right_aligned());
+    let inner = block.inner(frame.area());
+    let paragraph = Paragraph::new(Text::from(lines)).wrap(Wrap { trim: false });
+    // Keep the selected row, and the summary under a world, on screen.
+    let offset = (selected_line as u16 + 2).saturating_sub(inner.height);
+    frame.render_widget(paragraph.block(block).scroll((offset, 0)), frame.area());
 }
