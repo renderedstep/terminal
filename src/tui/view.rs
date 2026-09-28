@@ -373,6 +373,8 @@ fn status_lines(g: &Glance) -> Vec<Line<'static>> {
 
 /// The start screen: games to continue, then worlds to start one in.
 pub fn draw_start(frame: &mut Frame, start: &Start) {
+    // Inside the border, less the summary's indent.
+    let summary_width = frame.area().width.saturating_sub(6) as usize;
     let dim = Style::default().fg(Color::DarkGray);
     let bold = Style::default().add_modifier(Modifier::BOLD);
     let mut lines: Vec<Line<'static>> = vec![];
@@ -420,7 +422,8 @@ pub fn draw_start(frame: &mut Frame, start: &Start) {
         }
         row(&mut lines, selected, vec![Span::raw(w.title.clone())]);
         if !w.summary.is_empty() {
-            lines.push(Line::styled(format!("    {}", w.summary), dim));
+            let summary = present::one_line(&w.summary, summary_width);
+            lines.push(Line::styled(format!("    {summary}"), dim));
         }
     }
 
@@ -435,8 +438,9 @@ pub fn draw_start(frame: &mut Frame, start: &Start) {
         .title_bottom(Line::from(" ↑↓ choose · Enter play · Esc quit ").left_aligned())
         .title_bottom(Line::from(format!(" {footer} ")).right_aligned());
     let inner = block.inner(frame.area());
-    let paragraph = Paragraph::new(Text::from(lines)).wrap(Wrap { trim: false });
-    // Keep the selected row, and the summary under a world, on screen.
+    // Every row is one line, so the selected one is kept on screen, with
+    // the summary under a world, by counting lines.
+    let paragraph = Paragraph::new(Text::from(lines));
     let offset = (selected_line as u16 + 2).saturating_sub(inner.height);
     frame.render_widget(paragraph.block(block).scroll((offset, 0)), frame.area());
 }

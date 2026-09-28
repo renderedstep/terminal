@@ -305,6 +305,19 @@ pub fn started(at: &str) -> String {
     }
 }
 
+/// `text` cut to at most `width` characters on one line, ending in `…` when
+/// anything was cut, as the web page cuts a world's summary.
+pub fn one_line(text: &str, width: usize) -> String {
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if text.chars().count() <= width {
+        return text;
+    }
+    let mut cut: String = text.chars().take(width.saturating_sub(1)).collect();
+    cut.truncate(cut.trim_end().len());
+    cut.push('…');
+    cut
+}
+
 pub const TUI_HELP: &str = "\
 Client commands:
   :exits      list every way out
@@ -324,6 +337,22 @@ ends in a \"+N more\" line naming the command that shows it all.";
 mod tests {
     use super::*;
     use crate::engine::fake::sample_glance;
+
+    #[test]
+    fn a_long_summary_is_cut_to_one_line() {
+        assert_eq!(one_line("A short\nsummary.", 20), "A short summary.");
+        assert_eq!(
+            one_line("A drowned road, walked at low tide.", 16),
+            "A drowned road,…"
+        );
+        assert_eq!(one_line("abc", 0), "…");
+    }
+
+    #[test]
+    fn a_start_time_shows_to_the_minute() {
+        assert_eq!(started("2026-09-20T18:00:00Z"), "2026-09-20 18:00");
+        assert_eq!(started("yesterday"), "yesterday");
+    }
 
     #[test]
     fn completes_verbs_then_targets() {
