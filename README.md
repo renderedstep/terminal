@@ -113,11 +113,23 @@ address is whatever the operator gives you, for example a MagicDNS name or a
 ta worlds            # the worlds a game can be started in
 ta new <world>       # start a game
 ta games             # your games
+ta                   # the start screen: continue a game or start one
+ta --resume          # continue the game you started last, skipping the start screen
 ta play [game]       # the full-screen client (the default command)
 ta line [game]       # plain line mode
 ```
 
-`ta play` with no game picks up your latest unfinished one.
+`ta` (or `ta play` with no game) opens on a start screen, like the engine's
+web page: your games to continue, unfinished ones first and the latest at the
+top, each with its world and when it was started, then the worlds a new game
+can be started in. Up and Down (or `j` and `k`) choose, Enter plays, Esc or
+`q` quits. If the engine refuses a choice, its reason is shown and you can
+choose again.
+
+`ta --resume` (or `ta play --resume`) skips the start screen and continues
+your unfinished game that was started last. With none to continue, it says so
+on the start screen. The engine does not report when a game was last played,
+so "last" means last started. `ta line` with no game continues the same game.
 
 In the full-screen client:
 

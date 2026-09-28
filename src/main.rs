@@ -8,6 +8,7 @@ use text_adventure_terminal::config::{self, ENV_TOKEN, ENV_URL};
 use text_adventure_terminal::engine::http::HttpEngine;
 use text_adventure_terminal::engine::{Engine, Reconnect};
 use text_adventure_terminal::protocol::Screen;
+use text_adventure_terminal::tui::start::latest_unfinished;
 use text_adventure_terminal::{line, present, tui, upgrade};
 
 /// Play text-adventure games from a terminal.
@@ -22,15 +23,26 @@ struct Cli {
     /// `ta login`: a flag can be seen by other users of this machine.
     #[arg(long, global = true, value_name = "TOKEN", hide = true)]
     token: Option<String>,
+    /// Skip the start screen and continue the game you started last.
+    #[arg(long)]
+    resume: bool,
     #[command(subcommand)]
     command: Option<Cmd>,
 }
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Play in the full-screen client (the default).
-    Play(GameArgs),
+    /// Play in the full-screen client (the default). Without a game or a
+    /// world, it opens on a start screen listing both.
+    Play {
+        #[command(flatten)]
+        game: GameArgs,
+        /// Skip the start screen and continue the game you started last.
+        #[arg(long, conflicts_with_all = ["game", "world"])]
+        resume: bool,
+    },
     /// Play in plain line mode: lines from stdin, prose and outcomes to stdout.
+    /// Without a game or a world, it continues the game you started last.
     Line {
         #[command(flatten)]
         game: GameArgs,
@@ -62,7 +74,7 @@ enum Cmd {
 
 #[derive(clap::Args, Default)]
 struct GameArgs {
-    /// The game to play. Without one, your latest unfinished game.
+    /// The game to play.
     game: Option<String>,
     /// Start a new game in this world instead.
     #[arg(long, conflicts_with = "game")]
@@ -105,10 +117,8 @@ fn open_game(engine: &dyn Engine, args: &GameArgs) -> anyhow::Result<Screen> {
     if let Some(game) = &args.game {
         return engine.screen(game).map_err(engine_error);
     }
-    let mut games = engine.games().map_err(engine_error)?;
-    games.retain(|g| !g.over);
-    games.sort_by(|a, b| a.started_at.cmp(&b.started_at));
-    if let Some(game) = games.last() {
+    let games = engine.games().map_err(engine_error)?;
+    if let Some(game) = latest_unfinished(&games) {
         return engine.screen(&game.id).map_err(engine_error);
     }
     let worlds = engine.worlds().map_err(engine_error)?;
@@ -128,6 +138,20 @@ fn open_game(engine: &dyn Engine, args: &GameArgs) -> anyhow::Result<Screen> {
     }
 }
 
+/// What `ta play` opens on: the game or world named, else the start screen
+/// or, with `--resume`, the game started last.
+fn opening(
+    engine: &dyn Engine,
+    args: &GameArgs,
+    resume: bool,
+    label: &str,
+) -> anyhow::Result<tui::Opening> {
+    if args.game.is_some() || args.world.is_some() {
+        return Ok(tui::Opening::Game(Box::new(open_game(engine, args)?)));
+    }
+    tui::opening(engine, resume, label).map_err(engine_error)
+}
+
 fn main() {
     let cli = Cli::parse();
     if let Err(e) = run(cli) {
@@ -137,23 +161,25 @@ fn main() {
 }
 
 fn run(cli: Cli) -> anyhow::Result<()> {
-    match cli
-        .command
-        .as_ref()
-        .unwrap_or(&Cmd::Play(GameArgs::default()))
-    {
-        Cmd::Play(args) => {
+    if cli.resume && cli.command.is_some() {
+        bail!("--resume goes on its own: `ta --resume`, or `ta play --resume`");
+    }
+    let default = Cmd::Play {
+        game: GameArgs::default(),
+        resume: cli.resume,
+    };
+    match cli.command.as_ref().unwrap_or(&default) {
+        Cmd::Play { game, resume } => {
+            if !std::io::stdout().is_terminal() {
+                bail!("the full-screen client needs a terminal; use `ta line` for scripts");
+            }
             let engine: Arc<dyn Engine> = Arc::new(connect(&cli)?);
             let label = match engine.service() {
                 Ok(s) => format!("{} · {} {}", s.player.name, s.engine.name, s.engine.version),
                 Err(e) => return Err(engine_error(e)),
             };
-            let screen = open_game(engine.as_ref(), args)?;
-            if !std::io::stdout().is_terminal() {
-                bail!("the full-screen client needs a terminal; use `ta line` for scripts");
-            }
-            let game = screen.game.id.clone();
-            tui::run(engine, game, tui::app::App::new(screen, label))
+            let opening = opening(engine.as_ref(), game, *resume, &label)?;
+            tui::run(engine, opening, label)
         }
         Cmd::Line { game, json } => {
             let engine = connect(&cli)?;
