@@ -150,7 +150,8 @@ In the full-screen client:
   other panels shrink. `:exits`, `:here`, `:items` and `:carrying` print a
   panel's full list into the log, and `:panels` prints them all. `:help`
   lists the client's commands.
-- Esc, Ctrl-C or `:q` quits.
+- Esc or `/menu` goes back to the start screen, at any time and after a
+  game ends; Ctrl-C or `:q` quits.
 
 Refusals, the monthly spend limit, rate limits and a rejected token are
 shown in the engine's own words. If the connection drops during a turn, the

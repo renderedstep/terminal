@@ -15,4 +15,4 @@ expression: screen
 └──────────────────────────────────────────────────────────────────────────┘│The Signal Walk                 │
 ┌ /go /talk /inspect /take /drop /attack /throw /use ──────────────────────┐│+5 more · :exits                │
 │>                                                                         │└────────────────────────────────┘
-└─────────────────────────────────────────────────────── Wren · fake 0.0.0 ┘+5 hidden panels · :panels
+└ Esc menu · :help ───────────────────────────────────── Wren · fake 0.0.0 ┘+5 hidden panels · :panels

@@ -1,6 +1,5 @@
 ---
 source: tests/tui.rs
-assertion_line: 74
 expression: "render(&app(), 70, 22)"
 ---
 ┌ The Tide Post ─────────────────────────────────────────────────────┐
@@ -24,4 +23,4 @@ Lying here: Filing press  Carrying: Assize tide-slate
 hurt (14 of 18)  Next: Find out who wrote on the slate.               
 ┌ /go /talk /inspect /take /drop /attack /throw /use ────────────────┐
 │>                                                                   │
-└───────────────────────────────────────────────── Wren · fake 0.0.0 ┘
+└ Esc menu · :help ─────────────────────────────── Wren · fake 0.0.0 ┘

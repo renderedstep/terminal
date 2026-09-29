@@ -74,6 +74,12 @@ pub fn opening(engine: &dyn Engine, resume: bool, engine_label: &str) -> engine:
     Ok(Opening::Choose(start))
 }
 
+/// The start screen again, fresh from the engine, after the player leaves a
+/// game with Esc or /menu.
+pub fn back_to_menu(engine: &dyn Engine, engine_label: &str) -> engine::Result<Opening> {
+    opening(engine, false, engine_label)
+}
+
 /// Open what the player picked on the start screen.
 pub fn open_choice(engine: &dyn Engine, choice: &Choice) -> engine::Result<Screen> {
     match choice {
@@ -85,15 +91,27 @@ pub fn open_choice(engine: &dyn Engine, choice: &Choice) -> engine::Result<Scree
 pub fn run(engine: Arc<dyn Engine>, opening: Opening, engine_label: String) -> anyhow::Result<()> {
     let mut terminal = ratatui::init();
     let result = (|| -> anyhow::Result<()> {
-        let screen = match opening {
-            Opening::Game(screen) => *screen,
-            Opening::Choose(mut start) => match choose(&mut terminal, engine.as_ref(), &mut start)?
-            {
-                Some(screen) => screen,
-                None => return Ok(()),
-            },
-        };
-        play(&mut terminal, engine, App::new(screen, engine_label))
+        let mut opening = opening;
+        loop {
+            let screen = match opening {
+                Opening::Game(screen) => *screen,
+                Opening::Choose(mut start) => {
+                    match choose(&mut terminal, engine.as_ref(), &mut start)? {
+                        Some(screen) => screen,
+                        None => return Ok(()),
+                    }
+                }
+            };
+            let app = play(
+                &mut terminal,
+                engine.clone(),
+                App::new(screen, engine_label.clone()),
+            )?;
+            if !app.menu {
+                return Ok(());
+            }
+            opening = back_to_menu(engine.as_ref(), &engine_label)?;
+        }
     })();
     ratatui::restore();
     result
@@ -131,13 +149,13 @@ fn play(
     terminal: &mut DefaultTerminal,
     engine: Arc<dyn Engine>,
     mut app: App,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<App> {
     let game = app.game.clone();
     let (tx, rx): (Sender<EngineMsg>, Receiver<EngineMsg>) = mpsc::channel();
     if let Some(cmd) = app.start() {
         execute(engine.clone(), game.clone(), cmd, tx.clone());
     }
-    while !app.quit {
+    while !app.quit && !app.menu {
         terminal.draw(|f| view::draw(f, &app))?;
         if event::poll(Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
@@ -152,5 +170,5 @@ fn play(
             }
         }
     }
-    Ok(())
+    Ok(app)
 }

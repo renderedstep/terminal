@@ -580,3 +580,84 @@ fn a_short_start_screen_keeps_the_choice_in_view() {
     assert!(screen.contains("> The Causeway "), "{screen}");
     assert!(screen.contains("A drowned road, walked at low tide."));
 }
+
+fn ended_app() -> App {
+    let mut screen = sample_screen();
+    screen.game.over = true;
+    screen.standing.over = true;
+    screen.standing.ended = Some("The tally is taken.".into());
+    App::new(screen, "Wren · fake 0.0.0".into())
+}
+
+#[test]
+fn esc_or_menu_leaves_a_game_for_the_start_screen_without_quitting() {
+    let mut playing = app();
+    playing.on_key(key(KeyCode::Esc));
+    assert!(playing.menu && !playing.quit);
+    for typed in ["/menu", ":menu"] {
+        let mut app = app();
+        type_line(&mut app, typed);
+        assert_eq!(
+            app.on_key(key(KeyCode::Enter)),
+            None,
+            "{typed} reached the engine"
+        );
+        assert!(app.menu && !app.quit);
+    }
+    let mut app = app();
+    app.on_key(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL));
+    assert!(app.quit && !app.menu);
+}
+
+#[test]
+fn the_ended_screen_offers_the_way_back() {
+    let mut app = ended_app();
+    let screen = render(&app, 110, 20);
+    insta::assert_snapshot!(screen);
+    app.on_key(key(KeyCode::Esc));
+    assert!(app.menu);
+}
+
+#[test]
+fn a_concluded_refusal_points_to_the_menu() {
+    let engine = Arc::new(FakeEngine::new());
+    let words = "The story is over.";
+    let mut done = finished(
+        OutcomeKind::Refused,
+        words,
+        vec![],
+        Some(Refusal {
+            kind: RefusalKind::Concluded,
+            text: words.into(),
+        }),
+    );
+    done.standing.over = true;
+    engine.script(ScriptedTurn {
+        prose: vec![],
+        glance: None,
+        finished: done,
+    });
+    let mut app = ended_app();
+    type_line(&mut app, "/quit");
+    let cmd = app.on_key(key(KeyCode::Enter)).unwrap();
+    drive(&mut app, engine, cmd);
+    assert_eq!(
+        app.log.last(),
+        Some(&Entry::Notice(
+            text_adventure_terminal::tui::app::BACK_TO_MENU.into()
+        ))
+    );
+}
+
+#[test]
+fn the_menu_lists_games_again_and_opens_a_playthrough() {
+    let engine = FakeEngine::new();
+    let Opening::Choose(mut start) = tui::back_to_menu(&engine, "label").unwrap() else {
+        panic!("the menu opened a game");
+    };
+    let choice = start.on_key(key(KeyCode::Enter)).unwrap();
+    let screen = tui::open_choice(&engine, &choice).unwrap();
+    let app = App::new(screen, "label".into());
+    assert_eq!(app.game, "game-1");
+    assert!(!app.menu && !app.quit);
+}
