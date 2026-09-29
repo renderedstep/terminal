@@ -7,7 +7,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crate::engine::{new_request_token, EngineError, Progress};
 use crate::present;
 use crate::protocol::{
-    FinishedEvent, Glance, OutcomeKind, SavedAction, Screen, Standing, Turn, TurnEventKind,
+    FinishedEvent, Glance, OutcomeKind, RefusalKind, SavedAction, Screen, Standing, Turn,
+    TurnEventKind,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -46,6 +47,9 @@ pub enum EngineMsg {
     Standing(Standing),
 }
 
+/// How to leave a game, offered wherever a finished one would dead-end.
+pub const BACK_TO_MENU: &str = "Press Esc or type /menu to go back to the start screen.";
+
 pub struct App {
     /// The game's id.
     pub game: String,
@@ -64,6 +68,8 @@ pub struct App {
     /// Lines scrolled up from the bottom of the log.
     pub scroll: u16,
     pub quit: bool,
+    /// The player asked to go back to the start screen.
+    pub menu: bool,
 }
 
 impl App {
@@ -82,6 +88,7 @@ impl App {
             status: String::new(),
             scroll: 0,
             quit: false,
+            menu: false,
         };
         app.load_log(&screen);
         app
@@ -136,7 +143,10 @@ impl App {
         if self.standing.over {
             let why = self.standing.ended.clone().unwrap_or_default();
             self.log.push(Entry::Notice(
-                format!("The game is over. {why}").trim().into(),
+                format!("The game is over. {why} {BACK_TO_MENU}")
+                    .replace("  ", " ")
+                    .trim()
+                    .into(),
             ));
         }
     }
@@ -152,7 +162,7 @@ impl App {
         match key.code {
             KeyCode::Char('c') | KeyCode::Char('d') if ctrl => self.quit = true,
             KeyCode::Char('u') if ctrl => self.input.clear(),
-            KeyCode::Esc => self.quit = true,
+            KeyCode::Esc => self.menu = true,
             KeyCode::Char(c) => self.input.push(c),
             KeyCode::Backspace => {
                 self.input.pop();
@@ -190,6 +200,11 @@ impl App {
         match line.as_str() {
             ":q" | ":quit" => {
                 self.quit = true;
+                return None;
+            }
+            ":menu" | "/menu" => {
+                self.input.clear();
+                self.menu = true;
                 return None;
             }
             ":refresh" => {
@@ -309,10 +324,18 @@ impl App {
         }
         self.log
             .extend(f.notices.iter().cloned().map(Entry::Notice));
+        let concluded = f
+            .refusal
+            .as_ref()
+            .is_some_and(|r| r.kind == RefusalKind::Concluded);
         self.log.push(Entry::Outcome(present::outcome_summary(&f)));
         self.glance = f.glance;
         self.standing = f.standing;
         self.status.clear();
-        self.note_standing();
+        if concluded {
+            self.log.push(Entry::Notice(BACK_TO_MENU.into()));
+        } else {
+            self.note_standing();
+        }
     }
 }

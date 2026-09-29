@@ -1,0 +1,24 @@
+---
+source: tests/tui.rs
+expression: screen
+---
+┌ The Tide Post ───────────────────────────────────────────────────────────┐┌ Room ──────────────────────────┐
+│The chalk is still under your thumb and it is still not your handwriting. ││The Tide Post +1 more           │
+│                                                                          │└────────────────────────────────┘
+│Justicar Brace waits on the bench.                                        │┌ Ways out ──────────────────────┐
+│                                                                          ││The Causeway Court              │
+│The game is over. The tally is taken. Press Esc or type /menu to go back  ││The Sea Stair (unexplored)      │
+│to the start screen.                                                      │└────────────────────────────────┘
+│                                                                          │┌ Here ──────────────────────────┐
+│                                                                          ││Neb Halloran +1 more            │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Lying here ────────────────────┐
+│                                                                          ││Filing press                    │
+│                                                                          │└────────────────────────────────┘
+│                                                                          │┌ Carrying ──────────────────────┐
+│                                                                          ││Assize tide-slate               │
+│                                                                          │└────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────────┘┌ Condition ─────────────────────┐
+┌ The story has ended · Esc or /menu: back to the start screen ────────────┐│hurt (14 of 18) +1 more         │
+│>                                                                         │└────────────────────────────────┘
+└ Esc menu · :help ───────────────────────────────────── Wren · fake 0.0.0 ┘+ Next beat · :panels

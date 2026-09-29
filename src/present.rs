@@ -329,7 +329,8 @@ Client commands:
   :ack        let go of a turn that cannot finish
   :refresh    redraw from the engine
   :help       show this list
-  :q          quit
+  /menu       back to the start screen (or press Esc)
+  :q          quit ta
 PageUp and PageDown scroll the log; a side panel too short for its list
 ends in a \"+N more\" line naming the command that shows it all.";
 

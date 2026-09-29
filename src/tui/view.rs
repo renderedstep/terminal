@@ -55,10 +55,18 @@ fn draw_main(frame: &mut Frame, app: &App, area: Rect, status: Option<Vec<Line<'
         frame.render_widget(Paragraph::new(status), status_area);
     }
 
-    let hint = present::verb_hint(&app.glance);
-    let mut input_block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" {hint} "));
+    let mut input_block = Block::default().borders(Borders::ALL);
+    input_block = if app.standing.over {
+        input_block.title(Span::styled(
+            " The story has ended · Esc or /menu: back to the start screen ",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ))
+    } else {
+        input_block.title(format!(" {} ", present::verb_hint(&app.glance)))
+    };
+    input_block = input_block.title_bottom(Line::from(" Esc menu · :help ").left_aligned());
     let footer = if app.status.is_empty() {
         app.engine_label.clone()
     } else {
