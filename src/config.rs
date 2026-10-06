@@ -8,6 +8,8 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::{mpsc, Arc};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -82,11 +84,76 @@ fn keyring_enabled() -> bool {
     std::env::var_os(ENV_NO_KEYRING).is_none_or(|v| v.is_empty() || v == "0")
 }
 
-fn keyring_entry() -> Option<keyring::Entry> {
-    if !keyring_enabled() {
-        return None;
+/// How long one keyring call may take before the token file is used instead.
+/// A locked keyring can wait forever on an unlock prompt that never shows.
+pub const KEYRING_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// The keyring operations the token needs, so tests can stand in for the OS.
+pub trait KeyringBackend: Send + Sync + 'static {
+    fn set(&self, token: &str) -> Result<(), String>;
+    /// `Ok(None)` when no token is stored.
+    fn get(&self) -> Result<Option<String>, String>;
+    fn delete(&self) -> Result<(), String>;
+}
+
+/// The OS keychain, through the `keyring` crate.
+struct OsKeyring;
+
+impl OsKeyring {
+    fn entry() -> Result<keyring::Entry, String> {
+        keyring::Entry::new(APP, "player-token").map_err(|e| e.to_string())
     }
-    keyring::Entry::new(APP, "player-token").ok()
+}
+
+impl KeyringBackend for OsKeyring {
+    fn set(&self, token: &str) -> Result<(), String> {
+        Self::entry()?
+            .set_password(token)
+            .map_err(|e| e.to_string())
+    }
+
+    fn get(&self) -> Result<Option<String>, String> {
+        match Self::entry()?.get_password() {
+            Ok(token) => Ok(Some(token)),
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    fn delete(&self) -> Result<(), String> {
+        match Self::entry()?.delete_credential() {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Err(e) => Err(e.to_string()),
+        }
+    }
+}
+
+fn os_keyring() -> Option<Arc<dyn KeyringBackend>> {
+    keyring_enabled().then(|| Arc::new(OsKeyring) as Arc<dyn KeyringBackend>)
+}
+
+/// Run one keyring call on its own thread and wait at most `timeout`. A call
+/// that does not answer in time is abandoned, never joined, so the command
+/// can finish; the caller then uses the token file and says so once.
+fn bounded<T: Send + 'static>(
+    backend: &Arc<dyn KeyringBackend>,
+    timeout: Duration,
+    op: impl FnOnce(&dyn KeyringBackend) -> Result<T, String> + Send + 'static,
+) -> Option<T> {
+    let (tx, rx) = mpsc::channel();
+    let backend = Arc::clone(backend);
+    let spawned = std::thread::Builder::new()
+        .name("keyring".into())
+        .spawn(move || {
+            let _ = tx.send(op(backend.as_ref()));
+        });
+    let note = match spawned.map(|_| rx.recv_timeout(timeout)) {
+        Ok(Ok(Ok(value))) => return Some(value),
+        Ok(Err(_)) => "did not respond",
+        Ok(Ok(Err(_))) | Err(_) => "failed",
+    };
+    eprintln!("The system keyring {note}; using the token file instead.");
+    None
 }
 
 fn token_file() -> Option<PathBuf> {
@@ -95,39 +162,70 @@ fn token_file() -> Option<PathBuf> {
 
 /// Store the token in the keychain, or a 0600 file where there is none.
 pub fn store_token(token: &str) -> anyhow::Result<TokenStore> {
-    if let Some(entry) = keyring_entry() {
-        if entry.set_password(token).is_ok() && entry.get_password().ok().as_deref() == Some(token)
-        {
+    store_token_with(os_keyring(), token_file(), KEYRING_TIMEOUT, token)
+}
+
+fn store_token_with(
+    keyring: Option<Arc<dyn KeyringBackend>>,
+    file: Option<PathBuf>,
+    timeout: Duration,
+    token: &str,
+) -> anyhow::Result<TokenStore> {
+    if let Some(backend) = keyring {
+        let owned = token.to_string();
+        let stored = bounded(&backend, timeout, move |k| {
+            k.set(&owned)?;
+            match k.get()? {
+                Some(t) if t == owned => Ok(()),
+                _ => Err("the stored token did not read back".into()),
+            }
+        });
+        if stored.is_some() {
             // A stale file copy would shadow nothing but should not linger.
-            if let Some(path) = token_file() {
+            if let Some(path) = &file {
                 let _ = fs::remove_file(path);
             }
             return Ok(TokenStore::Keychain);
         }
     }
-    let path = token_file().ok_or_else(|| anyhow::anyhow!("no config directory on this system"))?;
+    let path = file.ok_or_else(|| anyhow::anyhow!("no config directory on this system"))?;
     write_private(&path, token)?;
     Ok(TokenStore::File)
 }
 
 pub fn load_token() -> Option<String> {
-    if let Some(entry) = keyring_entry() {
-        if let Ok(token) = entry.get_password() {
+    load_token_with(os_keyring(), token_file(), KEYRING_TIMEOUT)
+}
+
+fn load_token_with(
+    keyring: Option<Arc<dyn KeyringBackend>>,
+    file: Option<PathBuf>,
+    timeout: Duration,
+) -> Option<String> {
+    if let Some(backend) = keyring {
+        if let Some(Some(token)) = bounded(&backend, timeout, |k| k.get()) {
             return Some(token);
         }
     }
-    let path = token_file()?;
-    fs::read_to_string(path)
+    fs::read_to_string(file?)
         .ok()
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty())
 }
 
 pub fn forget_token() -> anyhow::Result<()> {
-    if let Some(entry) = keyring_entry() {
-        let _ = entry.delete_credential();
+    forget_token_with(os_keyring(), token_file(), KEYRING_TIMEOUT)
+}
+
+fn forget_token_with(
+    keyring: Option<Arc<dyn KeyringBackend>>,
+    file: Option<PathBuf>,
+    timeout: Duration,
+) -> anyhow::Result<()> {
+    if let Some(backend) = keyring {
+        bounded(&backend, timeout, |k| k.delete());
     }
-    if let Some(path) = token_file() {
+    if let Some(path) = file {
         match fs::remove_file(path) {
             Ok(()) => {}
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
@@ -208,5 +306,122 @@ mod tests {
         let mode = fs::metadata(&path).unwrap().permissions().mode() & 0o777;
         assert_eq!(mode, 0o600);
         assert_eq!(fs::read_to_string(&path).unwrap(), "secret");
+    }
+    /// A keyring whose every call waits forever, like a locked one.
+    struct Hangs;
+
+    impl KeyringBackend for Hangs {
+        fn set(&self, _: &str) -> Result<(), String> {
+            loop {
+                std::thread::park();
+            }
+        }
+        fn get(&self) -> Result<Option<String>, String> {
+            loop {
+                std::thread::park();
+            }
+        }
+        fn delete(&self) -> Result<(), String> {
+            loop {
+                std::thread::park();
+            }
+        }
+    }
+
+    /// A keyring whose every call errors.
+    struct Fails;
+
+    impl KeyringBackend for Fails {
+        fn set(&self, _: &str) -> Result<(), String> {
+            Err("no keyring".into())
+        }
+        fn get(&self) -> Result<Option<String>, String> {
+            Err("no keyring".into())
+        }
+        fn delete(&self) -> Result<(), String> {
+            Err("no keyring".into())
+        }
+    }
+
+    /// A working in-memory keyring.
+    #[derive(Default)]
+    struct Memory(std::sync::Mutex<Option<String>>);
+
+    impl KeyringBackend for Memory {
+        fn set(&self, token: &str) -> Result<(), String> {
+            *self.0.lock().unwrap() = Some(token.into());
+            Ok(())
+        }
+        fn get(&self) -> Result<Option<String>, String> {
+            Ok(self.0.lock().unwrap().clone())
+        }
+        fn delete(&self) -> Result<(), String> {
+            *self.0.lock().unwrap() = None;
+            Ok(())
+        }
+    }
+
+    const BOUND: Duration = Duration::from_millis(200);
+
+    fn falls_back_to_file(backend: Arc<dyn KeyringBackend>) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("token");
+        let file = Some(path.clone());
+
+        let started = std::time::Instant::now();
+        let store = store_token_with(Some(backend.clone()), file.clone(), BOUND, "secret").unwrap();
+        assert_eq!(store, TokenStore::File);
+        assert_eq!(fs::read_to_string(&path).unwrap(), "secret");
+
+        let token = load_token_with(Some(backend.clone()), file.clone(), BOUND);
+        assert_eq!(token.as_deref(), Some("secret"));
+
+        forget_token_with(Some(backend), file, BOUND).unwrap();
+        assert!(!path.exists());
+        // Each of the four keyring calls may use the whole bound, no more.
+        assert!(started.elapsed() < BOUND * 4 + Duration::from_secs(1));
+    }
+
+    #[test]
+    fn locked_keyring_falls_back_to_file() {
+        falls_back_to_file(Arc::new(Hangs));
+    }
+
+    #[test]
+    fn failing_keyring_falls_back_to_file() {
+        falls_back_to_file(Arc::new(Fails));
+    }
+
+    #[test]
+    fn working_keyring_keeps_the_token() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("token");
+        fs::write(&path, "stale").unwrap();
+        let file = Some(path.clone());
+        let backend: Arc<dyn KeyringBackend> = Arc::new(Memory::default());
+
+        let store = store_token_with(Some(backend.clone()), file.clone(), BOUND, "secret").unwrap();
+        assert_eq!(store, TokenStore::Keychain);
+        assert!(!path.exists());
+        assert_eq!(
+            load_token_with(Some(backend.clone()), file.clone(), BOUND).as_deref(),
+            Some("secret")
+        );
+        forget_token_with(Some(backend.clone()), file.clone(), BOUND).unwrap();
+        assert_eq!(load_token_with(Some(backend), file, BOUND), None);
+    }
+
+    #[test]
+    fn no_keyring_uses_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = Some(dir.path().join("token"));
+        assert_eq!(
+            store_token_with(None, file.clone(), BOUND, "secret").unwrap(),
+            TokenStore::File
+        );
+        assert_eq!(
+            load_token_with(None, file, BOUND).as_deref(),
+            Some("secret")
+        );
     }
 }
