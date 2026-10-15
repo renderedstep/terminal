@@ -1,0 +1,26 @@
+---
+source: tests/tui.rs
+expression: screen
+---
+┌ The Tide Post ─────────────────────────────────────────────────────┐
+│The chalk is still under your thumb and it is still not your        │
+│handwriting.                                                        │
+│                                                                    │
+│Justicar Brace waits on the bench.                                  │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+Ways out: The Causeway Court +11 more · :exits  Here: +2 more · :here 
+Lying here: Filing press  Carrying: Assize tide-slate                 
+hurt (14 of 18)  Next: Find out who wrote on the slate.               
+┌ /go /talk /inspect /take /drop /attack /throw /use ────────────────┐
+│>                                                                   │
+└ Esc menu · :help ─────────────────────────────── Wren · fake 0.0.0 ┘

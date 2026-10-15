@@ -24,7 +24,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         draw_main(frame, app, left, None);
         draw_panels(frame, &app.glance, right);
     } else {
-        let status = status_lines(&app.glance);
+        let status = status_lines(&app.glance, area.width);
         draw_main(frame, app, area, Some(status));
     }
 }
@@ -349,26 +349,102 @@ fn draw_panels(frame: &mut Frame, g: &Glance, area: Rect) {
     }
 }
 
-/// The folded panels for a narrow terminal.
-fn status_lines(g: &Glance) -> Vec<Line<'static>> {
-    let list = |v: Vec<&str>| {
-        if v.is_empty() {
-            "nothing".to_string()
-        } else {
-            v.join(", ")
-        }
+/// One folded list, "Label: a, b", as the spans that fit in `width`, with a
+/// "+N more" marker in place of the names that do not.
+fn fit_list(label: &str, names: Vec<&str>, width: usize, command: &str) -> Vec<Span<'static>> {
+    let text_width = |s: &str| Span::raw(s.to_string()).width();
+    let full = if names.is_empty() {
+        "nothing".to_string()
+    } else {
+        names.join(", ")
     };
-    let here = list(g.people.iter().map(|p| p.name.as_str()).collect());
+    let prefix = format!("{label}: ");
+    if text_width(&prefix) + text_width(&full) <= width {
+        return vec![Span::raw(prefix + &full)];
+    }
+    let mut kept = 0;
+    let mut used = text_width(&prefix);
+    for (i, name) in names.iter().enumerate() {
+        let sep = if i == 0 { 0 } else { 2 };
+        let marker = text_width(&format!(" +{} more · {command}", names.len() - i - 1));
+        if used + sep + text_width(name) + marker > width {
+            break;
+        }
+        used += sep + text_width(name);
+        kept += 1;
+    }
+    let marker = if kept == 0 {
+        format!("+{} more · {command}", names.len())
+    } else {
+        format!(" +{} more · {command}", names.len() - kept)
+    };
     vec![
-        Line::raw(format!(
-            "Ways out: {}  Here: {here}",
-            list(g.exits.iter().map(|e| e.name.as_str()).collect())
-        )),
-        Line::raw(format!(
-            "Lying here: {}  Carrying: {}",
-            list(g.lying_here.iter().map(|t| t.name.as_str()).collect()),
-            list(g.carrying.iter().map(|t| t.name.as_str()).collect())
-        )),
+        Span::raw(prefix + &names[..kept].join(", ")),
+        Span::styled(marker, Style::default().fg(Color::Yellow)),
+    ]
+}
+
+/// Two folded lists on one line of `width`. The first comes first, as Ways
+/// out does in the wide panels: it keeps all it needs, short of the room the
+/// second needs for its label and marker, and the second gets the rest.
+fn fit_pair(
+    first: (&str, Vec<&str>, &str),
+    second: (&str, Vec<&str>, &str),
+    width: usize,
+) -> Line<'static> {
+    let need = |(label, names, _): &(&str, Vec<&str>, &str)| {
+        Span::raw(format!("{label}: {}", names.join(", ")))
+            .width()
+            .max(label.len() + 9)
+    };
+    let least = |(label, names, command): &(&str, Vec<&str>, &str)| {
+        let marker = format!("{label}: +{} more · {command}", names.len());
+        Span::raw(marker).width()
+    };
+    let room = width.saturating_sub(2);
+    let second_least = need(&second).min(least(&second));
+    let first_width = need(&first).min(room.saturating_sub(second_least));
+    let mut spans = fit_list(first.0, first.1, first_width, first.2);
+    spans.push(Span::raw("  "));
+    spans.extend(fit_list(
+        second.0,
+        second.1,
+        room.saturating_sub(first_width),
+        second.2,
+    ));
+    Line::from(spans)
+}
+
+/// The folded panels for a narrow terminal of `width` columns.
+fn status_lines(g: &Glance, width: u16) -> Vec<Line<'static>> {
+    let width = width as usize;
+    vec![
+        fit_pair(
+            (
+                "Ways out",
+                g.exits.iter().map(|e| e.name.as_str()).collect(),
+                ":exits",
+            ),
+            (
+                "Here",
+                g.people.iter().map(|p| p.name.as_str()).collect(),
+                ":here",
+            ),
+            width,
+        ),
+        fit_pair(
+            (
+                "Lying here",
+                g.lying_here.iter().map(|t| t.name.as_str()).collect(),
+                ":items",
+            ),
+            (
+                "Carrying",
+                g.carrying.iter().map(|t| t.name.as_str()).collect(),
+                ":carrying",
+            ),
+            width,
+        ),
         Line::raw(format!(
             "{}  Next: {}",
             g.condition.clone().unwrap_or_default(),

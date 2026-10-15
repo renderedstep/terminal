@@ -337,6 +337,15 @@ fn a_very_short_terminal_marks_hidden_exits() {
 }
 
 #[test]
+fn a_narrow_terminal_marks_hidden_exits() {
+    let screen = render(&crowded_app(), 70, 22);
+    assert!(screen.contains("Ways out: The Causeway Court"));
+    assert!(screen.contains("more · :exits"));
+    assert!(!screen.contains("The Harbour Steps"));
+    insta::assert_snapshot!(screen);
+}
+
+#[test]
 fn ways_out_gets_height_first() {
     let titles = [
         "Room",
