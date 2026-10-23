@@ -1,8 +1,10 @@
 name: Release
 
 # Pushing a tag like v0.1.0 builds every target and attaches the archives,
-# with a SHA256SUMS file, to a GitHub Release on this repository. Installing
-# uses the player's own `gh` login (see install.sh and install.ps1).
+# with a SHA256SUMS file, to a GitHub Release on this repository. The releases
+# are public; install.sh and install.ps1 download them with or without `gh`.
+# Each archive carries the binary, LICENSE-MIT, LICENSE-APACHE and a
+# THIRD-PARTY-LICENSES file built by .github/licenses/third-party.sh.
 
 on:
   push:
@@ -51,18 +53,25 @@ jobs:
           else
             cargo build --release --locked --target ${{ matrix.target }}
           fi
+      - name: Install cargo-about
+        run: cargo install cargo-about --version 0.9.2 --locked
+      - name: Third-party licences
+        shell: bash
+        run: .github/licenses/third-party.sh ${{ matrix.target }} THIRD-PARTY-LICENSES
       - name: Package (unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p dist
-          tar -C target/${{ matrix.target }}/release -czf dist/ta-${{ matrix.target }}.tar.gz ta
+          mkdir -p dist package
+          cp target/${{ matrix.target }}/release/ta LICENSE-MIT LICENSE-APACHE THIRD-PARTY-LICENSES package/
+          tar -C package -czf dist/ta-${{ matrix.target }}.tar.gz ta LICENSE-MIT LICENSE-APACHE THIRD-PARTY-LICENSES
       - name: Package (windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path target/${{ matrix.target }}/release/ta.exe -DestinationPath dist/ta-${{ matrix.target }}.zip
+          Compress-Archive -DestinationPath dist/ta-${{ matrix.target }}.zip -Path `
+            target/${{ matrix.target }}/release/ta.exe, LICENSE-MIT, LICENSE-APACHE, THIRD-PARTY-LICENSES
       - uses: actions/upload-artifact@v4
         with:
           name: ta-${{ matrix.target }}

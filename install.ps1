@@ -1,8 +1,13 @@
-# Install or upgrade `ta` on Windows from this repository's GitHub Releases,
-# using your own `gh` login (the releases are not public).
+# Install or upgrade `ta` on Windows from this repository's public GitHub
+# Releases. It downloads with the GitHub CLI when `gh` is installed and signed
+# in, and with Invoke-WebRequest otherwise.
 #
 #   gh api repos/renderedstep/terminal/contents/install.ps1 `
 #     -H 'Accept: application/vnd.github.raw' | Out-String | Invoke-Expression
+#
+# or, without gh:
+#
+#   irm https://raw.githubusercontent.com/renderedstep/terminal/main/install.ps1 | iex
 #
 # Environment:
 #   TA_VERSION      a release tag such as v0.1.0 (default: the latest release)
@@ -14,11 +19,11 @@ $repo = if ($env:TA_RELEASE_REPO) { $env:TA_RELEASE_REPO } else { 'renderedstep/
 $installDir = if ($env:TA_INSTALL_DIR) { $env:TA_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA 'Programs\ta' }
 $version = $env:TA_VERSION
 
-if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-  throw 'The GitHub CLI (gh) is required: https://cli.github.com'
+$useGh = $false
+if (Get-Command gh -ErrorAction SilentlyContinue) {
+  gh auth status *> $null
+  $useGh = $LASTEXITCODE -eq 0
 }
-gh auth status *> $null
-if ($LASTEXITCODE -ne 0) { throw 'gh is not signed in; run: gh auth login' }
 
 $target = 'x86_64-pc-windows-msvc'
 $asset = "ta-$target.zip"
@@ -26,12 +31,28 @@ $tmp = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid())
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
   if (-not $version) {
-    $version = gh release view --repo $repo --json tagName --jq .tagName
-    if ($LASTEXITCODE -ne 0) { throw "Could not find a release in $repo (does your gh login have access?)" }
+    if ($useGh) {
+      $version = gh release view --repo $repo --json tagName --jq .tagName
+      if ($LASTEXITCODE -ne 0) { $version = $null }
+    } else {
+      # The latest-release API answers without a login for a public repository.
+      try {
+        $version = (Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest").tag_name
+      } catch { $version = $null }
+    }
+    if (-not $version) { throw "Could not find a release in $repo" }
   }
   Write-Host "Downloading ta $version for $target"
-  gh release download $version --repo $repo --dir $tmp --pattern $asset --pattern SHA256SUMS
-  if ($LASTEXITCODE -ne 0) { throw "Could not download $asset from $repo $version" }
+  if ($useGh) {
+    gh release download $version --repo $repo --dir $tmp --pattern $asset --pattern SHA256SUMS
+    if ($LASTEXITCODE -ne 0) { throw "Could not download $asset from $repo $version" }
+  } else {
+    $base = "https://github.com/$repo/releases/download/$version"
+    try {
+      Invoke-WebRequest -UseBasicParsing "$base/$asset" -OutFile (Join-Path $tmp $asset)
+      Invoke-WebRequest -UseBasicParsing "$base/SHA256SUMS" -OutFile (Join-Path $tmp 'SHA256SUMS')
+    } catch { throw "Could not download $asset from $repo $version" }
+  }
 
   $line = Get-Content (Join-Path $tmp 'SHA256SUMS') |
     Where-Object { ($_ -split '\s+')[1].TrimStart('*') -eq $asset } |

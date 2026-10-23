@@ -1,9 +1,14 @@
 #!/bin/sh
-# Install or upgrade `ta` from this repository's GitHub Releases, using your
-# own `gh` login (the releases are not public).
+# Install or upgrade `ta` from this repository's public GitHub Releases. It
+# downloads with the GitHub CLI when `gh` is installed and signed in, and with
+# curl otherwise.
 #
 #   gh api repos/renderedstep/terminal/contents/install.sh \
 #     -H 'Accept: application/vnd.github.raw' | sh
+#
+# or, without gh:
+#
+#   curl -fsSL https://raw.githubusercontent.com/renderedstep/terminal/main/install.sh | sh
 #
 # Environment:
 #   TA_VERSION      a release tag such as v0.1.0 (default: the latest release)
@@ -18,8 +23,13 @@ version="${TA_VERSION:-}"
 say() { printf '%s\n' "$*"; }
 fail() { printf 'install.sh: %s\n' "$*" >&2; exit 1; }
 
-command -v gh >/dev/null 2>&1 || fail "the GitHub CLI (gh) is required: https://cli.github.com"
-gh auth status >/dev/null 2>&1 || fail "gh is not signed in; run: gh auth login"
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  use_gh=1
+else
+  use_gh=0
+  command -v curl >/dev/null 2>&1 ||
+    fail "need either the GitHub CLI (gh) signed in, or curl, to download the release"
+fi
 command -v tar >/dev/null 2>&1 || fail "tar is required"
 
 case "$(uname -s)" in
@@ -39,13 +49,28 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 
 if [ -z "$version" ]; then
-  version="$(gh release view --repo "$repo" --json tagName --jq .tagName)" ||
-    fail "could not find a release in $repo (does your gh login have access?)"
+  if [ "$use_gh" = 1 ]; then
+    version="$(gh release view --repo "$repo" --json tagName --jq .tagName)"
+  else
+    # /releases/latest redirects to /releases/tag/<tag>.
+    version="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      "https://github.com/$repo/releases/latest")" || version=
+    case "$version" in
+      */releases/tag/*) version="${version##*/}" ;;
+      *) version= ;;
+    esac
+  fi
+  [ -n "$version" ] || fail "could not find a release in $repo"
 fi
 say "Downloading ta $version for $target"
-gh release download "$version" --repo "$repo" --dir "$tmp" \
-  --pattern "$asset" --pattern SHA256SUMS ||
-  fail "could not download $asset from $repo $version"
+if [ "$use_gh" = 1 ]; then
+  gh release download "$version" --repo "$repo" --dir "$tmp" \
+    --pattern "$asset" --pattern SHA256SUMS
+else
+  base="https://github.com/$repo/releases/download/$version"
+  curl -fsSL -o "$tmp/$asset" "$base/$asset" &&
+    curl -fsSL -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
+fi || fail "could not download $asset from $repo $version"
 
 expected="$(awk -v a="$asset" '{ n=$2; sub(/^\*/, "", n) } n == a { print $1 }' "$tmp/SHA256SUMS")"
 [ -n "$expected" ] || fail "SHA256SUMS does not list $asset"

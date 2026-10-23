@@ -1,0 +1,21 @@
+Third-party licences for ta
+
+`ta` is built from the crates listed below. Their licence texts follow, one
+per distinct text, each with the crates it covers.
+
+{{#each overview}}
+{{{name}}} ({{count}})
+{{/each}}
+
+{{#each licenses}}
+================================================================================
+{{{name}}}
+
+Used by:
+{{#each used_by}}
+  {{crate.name}} {{crate.version}}{{#if crate.repository}} ({{crate.repository}}){{/if}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}
