@@ -25,15 +25,22 @@ it rolled. Under 80 columns the panels fold into a short status block.
 
 ## Install
 
-Releases are attached to this repository's GitHub Releases, which are private
-for now, so installing uses your own [GitHub CLI](https://cli.github.com) login.
-You need `gh` signed in (`gh auth login`) with access to this repository.
+Releases are public on this repository's GitHub Releases; you can download an
+archive by hand from https://github.com/renderedstep/terminal/releases/latest.
+Each archive holds the `ta` binary, its licences and the licence notices of
+the crates built into it (`THIRD-PARTY-LICENSES`).
+
+The install scripts use the [GitHub CLI](https://cli.github.com) when `gh` is
+installed and signed in, and plain HTTPS (`curl`, or `Invoke-WebRequest` on
+Windows) otherwise; no login is needed.
 
 macOS and Linux (installs to `~/.local/bin`):
 
 ```sh
 gh api repos/renderedstep/terminal/contents/install.sh \
   -H 'Accept: application/vnd.github.raw' | sh
+# or, without gh:
+curl -fsSL https://raw.githubusercontent.com/renderedstep/terminal/main/install.sh | sh
 ```
 
 Windows (PowerShell; installs to `%LOCALAPPDATA%\Programs\ta` and adds it to
@@ -42,10 +49,11 @@ your user `PATH`):
 ```powershell
 gh api repos/renderedstep/terminal/contents/install.ps1 `
   -H 'Accept: application/vnd.github.raw' | Out-String | Invoke-Expression
+# or, without gh:
+irm https://raw.githubusercontent.com/renderedstep/terminal/main/install.ps1 | iex
 ```
 
-Both scripts download the archive for your platform with `gh release
-download`, check it against the release's `SHA256SUMS`, and refuse to install
+Both scripts download the archive for your platform, check it against the release's `SHA256SUMS`, and refuse to install
 on a mismatch. Set `TA_VERSION=v0.2.0` to install a particular release, or
 `TA_INSTALL_DIR` to install somewhere else.
 
@@ -61,7 +69,8 @@ ta upgrade          # install the newest release in place of this binary
 ta upgrade --check  # only say whether a newer release exists
 ```
 
-`ta upgrade` uses your `gh` login too: it finds the latest release, downloads
+`ta upgrade` uses your `gh` login when there is one and plain HTTPS
+otherwise: it finds the latest release, downloads
 the archive for the platform it was built for, verifies the checksum, and
 replaces itself. Running the install script again does the same.
 
@@ -209,10 +218,13 @@ git tag v0.2.0 && git push origin v0.2.0
 
 `.github/workflows/release.yml` builds every target and attaches the archives
 and `SHA256SUMS` to a GitHub Release. The tag must match the crate version.
+Each archive also gets `LICENSE-MIT`, `LICENSE-APACHE` and a
+`THIRD-PARTY-LICENSES` file that `.github/licenses/third-party.sh` builds with
+[cargo-about](https://github.com/EmbarkStudios/cargo-about) for that target.
 
 `dist-workspace.toml` holds a [cargo-dist](https://opensource.axo.dev/cargo-dist/)
-configuration for when the repository goes public. Its public installers are
-switched off and it generates no CI today.
+configuration that is not used: its installers are switched off and it
+generates no CI. Releases come only from `release.yml`.
 
 ## Licence
 

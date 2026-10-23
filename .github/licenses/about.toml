@@ -1,0 +1,20 @@
+# cargo-about configuration for THIRD-PARTY-LICENSES, which the release
+# workflow builds and ships in every archive beside the `ta` binary.
+accepted = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "MPL-2.0",
+    "CDLA-Permissive-2.0",
+    "0BSD",
+    "BSL-1.0",
+]
+# Only what ends up in the shipped binary.
+ignore-build-dependencies = true
+ignore-dev-dependencies = true
+# third-party.sh passes the release target with --target.

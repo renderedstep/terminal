@@ -1,18 +1,17 @@
-# cargo-dist configuration, kept ready for when this repository goes public.
+# cargo-dist configuration, kept but not used.
 #
-# While the repository is private, releases come from .github/workflows/release.yml
-# and are installed with install.sh / install.ps1 through the player's own `gh`
-# login. Nothing here runs today: there is no dist-generated workflow, and the
-# public installers (shell, powershell, homebrew) are switched off. To go
-# public, pick the installers, run `dist init`, and let it regenerate CI.
+# Releases come from .github/workflows/release.yml as public GitHub Releases,
+# installed with install.sh / install.ps1 (through `gh` when it is signed in,
+# plain HTTPS otherwise). Nothing here runs: there is no dist-generated
+# workflow, and the cargo-dist installers (shell, powershell, homebrew) are
+# switched off.
 
 [workspace]
 members = ["cargo:."]
 
 [dist]
 cargo-dist-version = "0.30.2"
-# No public installers while private. When public, for example:
-# installers = ["shell", "powershell", "homebrew"]
+# Off: install.sh and install.ps1 are the installers.
 installers = []
 targets = [
   "aarch64-apple-darwin",
